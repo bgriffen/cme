@@ -52,8 +52,8 @@ class ApplicationMain(HasTraits):
                 width = 1280,
                 height = 750,
                 resizable = True,
-                title="Cosmology Made Easy"
-            )
+                title="Cosmology Made Easy",
+             )
 
     def _display_default(self):
         """Initialises the display."""
@@ -77,9 +77,6 @@ class ApplicationMain(HasTraits):
 
     def _installtab_default(self):
         return InstallFiles(self)
-
-    def _existencetab_default(self):
-        return Existence(self)
 
     def _existencetab_default(self):
         return Existence(self)
