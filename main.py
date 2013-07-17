@@ -117,7 +117,7 @@ class ApplicationMain(HasTraits):
 
     def __init__(self, **kwargs):
         self.markercolor = 'blue'
-        self.markersize = 2
+        self.markersize = 3
         self.markerstyle = 'o'
 
 if __name__ == '__main__':
