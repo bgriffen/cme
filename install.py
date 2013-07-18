@@ -46,7 +46,7 @@ class InstallFiles(HasTraits):
             os.makedirs(str(self.libpath))
 
     def _installfftw2_button_fired(self):
-        tmplibpath = './installs/fftw-2.1.5/'
+        tmplibpath = './lib/installs/fftw-2.1.5/'
         print "Installing:",tmplibpath
 
         flagstr = '--enable-type-prefix --enable-mpi'
@@ -92,7 +92,7 @@ class InstallFiles(HasTraits):
         print "FFTW2 INSTALLED:",str(self.fftw2dir)
 
     def _installfftw3_button_fired(self):
-        tmplibpath = './installs/fftw-3.3.3/'
+        tmplibpath = './lib/installs/fftw-3.3.3/'
         print "Installing:",tmplibpath
 
         flagstr = '--enable-threads  --enable-float'
@@ -138,7 +138,7 @@ class InstallFiles(HasTraits):
         print "FFTW3 INSTALLED:",str(self.fftw3dir)
 
     def _installhdf5_button_fired(self):
-        tmplibpath = './installs/hdf5-1.8.10/'
+        tmplibpath = './lib/installs/hdf5-1.8.10/'
         print "Installing:",tmplibpath
         #(/home/bgriffen/lib/szip,/home/bgriffen/lib/zlib/include,/home/bgriffen/lib/zlib/lib)
         #flagstr = '--enable-fortran --enable-cxx --with-szlib=%s --with-zlib=%s,%s'
@@ -154,7 +154,7 @@ class InstallFiles(HasTraits):
         print "HDF5 INSTALLED:",str(self.hdf5dir)
         
     def _installgsl_button_fired(self):
-        tmplibpath = './installs/gsl-1.9/'
+        tmplibpath = './lib/installs/gsl-1.9/'
         print "Installing:",tmplibpath
         tmpdir = os.getcwd()
         os.chdir(tmplibpath)
@@ -167,7 +167,7 @@ class InstallFiles(HasTraits):
         print "GSL INSTALLED:",str(self.gsldir)
 
     def _installszip_button_fired(self):
-        tmplibpath = './installs/szip-2.1/'
+        tmplibpath = './lib/installs/szip-2.1/'
         print "Installing:",tmplibpath
         tmpdir = os.getcwd()
         os.chdir(tmplibpath)
@@ -181,7 +181,7 @@ class InstallFiles(HasTraits):
         print "SZIP INSTALLED:",str(self.szipdir)
 
     def _installzlib_button_fired(self):
-        tmplibpath = './installs/zlib-1.2.8/'
+        tmplibpath = './lib/installs/zlib-1.2.8/'
         print "Installing:",tmplibpath
         tmpdir = os.getcwd()
         os.chdir(tmplibpath)
@@ -196,7 +196,7 @@ class InstallFiles(HasTraits):
     def __init__(self, main, **kwargs):
         HasTraits.__init__(self)
         self.main = main
-        self.libpath = self.main.headertab.basepath + '/lib'
+        self.libpath = self.main.headertab.masterpath + '/lib'
         self.fftw2dir = self.libpath + '/fftw2'
         self.fftw3dir = self.libpath + '/fftw3'
         self.hdf5dir = self.libpath + '/hdf5'

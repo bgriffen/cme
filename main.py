@@ -25,7 +25,7 @@ class ApplicationMain(HasTraits):
     gadgetruntab = Instance(GadgetRun)
     halofindtab = Instance(HaloFind)
     mergertreetab = Instance(MergerTree)
-    analysistab = Instance(Analysis)
+    #analysistab = Instance(Analysis)
 
     display = Instance(Figure)
     markercolor = ColorTrait
@@ -38,21 +38,21 @@ class ApplicationMain(HasTraits):
                                       Item(name='markersize', label="Size",springy=True)), label='Display'),
                                Item(name='scene',label='Mayavi',editor=SceneEditor(scene_class=MayaviScene)),show_labels=False)
 
+#Item('existencetab', style='custom', label='Existence',show_label=False),
     right_panel = Tabbed(Item('headertab', style='custom', label='Home',show_label=False),
                          Item('installtab', style='custom', label='Install',show_label=False),
-                         Item('existencetab', style='custom', label='Existence',show_label=False),
                          Item('initstab', style='custom', label='Initial Conditions',show_label=False),
                          Item('gadgetruntab', style='custom', label='Gadget',show_label=False),
                          Item('halofindtab', style='custom', label='Halo Finder',show_label=False),
-                         Item('mergertreetab', style='custom', label='Merger Tree',show_label=False),
-                         Item('analysistab', style='custom', label='Analysis',show_label=False))
+                         Item('mergertreetab', style='custom', label='Merger Tree',show_label=False))
+                         #Item('analysistab', style='custom', label='Analysis',show_label=False))
     
     view = View(HSplit(left_panel,
                  right_panel),
                 width = 1280,
                 height = 750,
                 resizable = True,
-                title="Cosmology Made Easy",
+                title="Caterpillar Made Easy",
              )
 
     def _display_default(self):
@@ -117,7 +117,7 @@ class ApplicationMain(HasTraits):
 
     def __init__(self, **kwargs):
         self.markercolor = 'blue'
-        self.markersize = 3
+        self.markersize = 2
         self.markerstyle = 'o'
 
 if __name__ == '__main__':

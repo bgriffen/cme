@@ -26,6 +26,18 @@ import socket
 import random
 import subprocess
 
+import pylab as plt
+
+import modules.readsnapshots.readsnapHDF5 as rsHD
+import modules.readsnapshots.readsnap as rs
+import modules.readsnapshots.readids
+import modules.readhalos.readsubf
+import modules.readhalos.RSDataReaderv2 as RSDataReader
+from modules.brendanlib.grifflib import *
+
+from random import randint
+
+
 class _MPLFigureEditor(Editor):
 
     scrollable  = True
