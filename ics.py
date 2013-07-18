@@ -1,6 +1,7 @@
 from Common import *
 from glob import glob
-
+import subprocess
+import random
 class InitialConditions(HasTraits):
 
     masterpath = Directory
@@ -11,6 +12,7 @@ class InitialConditions(HasTraits):
     parentsimconf = Str
     parentsimpath = Directory
     lagroutputdir = Directory
+    musicpath = Directory
     confstatus = Str
     parentseednum = Int
     parentseedlevel = Int
@@ -101,7 +103,7 @@ class InitialConditions(HasTraits):
     seedinit = Int(34567)
 
     makeic_button = Button("Generate/Plot Lagrangian Region(s)")
-    generate_button = Button("Make Directories + Populate With Configuration Files")
+    generate_button = Button("Make directories, populate with config files and run MUSIC")
     existencebutton = Button()
 
     view = View(Item(name='masterpath',label='Home'),
@@ -239,9 +241,15 @@ class InitialConditions(HasTraits):
                     constructparentconf(confname,boxlengthi,self.zinit,self.lTF,padding,overlap,self.refx,self.refy,self.refz, \
                                        self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
                                        sigma8,nspec,self.tranfunc[0],self.seedinit,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
-                                       self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr)
+                                       self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,self.noutput)
 
-                    self.confstatus = 'Generated parent configuration files.'
+                    self.confstatus = 'Generated halo configuration files.'
+                    runmusic = self.musicpath + '/MUSIC ' + confname
+                    cding = "cd " + writepath
+                    print "EXECUTING..."
+                    print runmusic
+                    subprocess.call(';'.join([cding, runmusic]), shell=True)
+
         else:
             for cosmi in self.cosmologylist:
                 for boxtypei in self.boxtype:
@@ -263,6 +271,7 @@ class InitialConditions(HasTraits):
                                           os.makedirs(self.outpath + 'halos/' + foldername)
         
                                       pointfile = self.outpath  + 'ics/lagr/HALO' + str(self.haloid) + 'NRVIR' + str(int(nrviri))
+                                      writepath = self.outpath + 'halos/' + foldername
                                       confname = self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
     
                                       self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
@@ -280,9 +289,20 @@ class InitialConditions(HasTraits):
                                       constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.refx,self.refy,self.refz, \
                                                              self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
                                                              sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
-                                                             self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei)
+                                                             self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
                                       
                                       self.confstatus = 'Generated halo configuration files.'
+                                      runmusic = self.musicpath + '/MUSIC ' + confname
+                                      cding = "cd " + writepath
+                                      print "EXECUTING..."
+                                      print runmusic
+                                      subprocess.call(';'.join([cding, runmusic]), shell=True)
+                                      
+                                      cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
+                                      runconvert = "python convertics.py"
+                                      rmconvert = "rm reWriteIC.py convertics.py"
+
+                                      subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
 
     def _masterpath_changed(self):
       self.candidatefiledir = self.main.headertab.datamasterpath
@@ -638,7 +658,8 @@ class InitialConditions(HasTraits):
         HasTraits.__init__(self)
         self.main = main
         self.haloid = self.main.existencetab.haloid 
-        
+        self.musicpath = self.main.headertab.musicpath
+
         self.candidatefiledir = self.main.headertab.datamasterpath
         self.candidatefilename = 'candidates.dat'
 
@@ -670,7 +691,9 @@ class InitialConditions(HasTraits):
         self.extentz = 0.2
         self.padding = ['7']
         self.overlap = ['4']
+        self.lmax = ['10']
         self.gradorder = 6
+        self.noutput = 4
         #self.parentsimconf = 'ics_example.conf'
         self.parentsimpath = self.main.headertab.parentsimpath + '512Parent/ics/'
         self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
@@ -688,7 +711,7 @@ class InitialConditions(HasTraits):
 def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,refcentx,refcenty,refcentz, \
                         refextx,refexty,refextz,align,baryons,use2LPT,useLLA,omegam,omegal,omegab,hubble, \
                         sigma8,nspec,transfer,seednum,seedlevel,outformat,icfilename,fftfine,accuracy,presmooth,postsmooth, \
-                        smoother,laplaceorder,gradorder,boxlevel,periodicTFstr,pointfile,boxtype):
+                        smoother,laplaceorder,gradorder,boxlevel,periodicTFstr,pointfile,boxtype,noutput):
 
     f = open(confname,'w')
     f.write('[setup]' + '\n')
@@ -707,7 +730,7 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
 
     f.write('region_point_file    = ' + str(pointfile) + '\n')
     f.write('align_top            = ' + str(align) + '\n')
-    f.write('Baryons              = ' + str(baryons) + '\n')
+    f.write('baryons              = ' + str(baryons) + '\n')
     f.write('use_2LPT             = ' + str(use2LPT) + '\n')
     f.write('use_2LLA             = ' + str(useLLA) + '\n')
     f.write('periodic_TF          = ' + str(periodicTFstr) + '\n')
@@ -723,19 +746,20 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
     f.write('\n')
     f.write('[random]' + '\n')
 
-    
-    seednumnew = seednum
-    for level in range(int(lmin),int(lmax)+1):
-        seednumnew = seednumnew * 2
-        if level != seedlevel:
-            f.write('seed[' + str(level) + ']              = ' + str(seednumnew) + '\n')
-        else:
-            f.write('seed[' + str(seedlevel) + ']              = ' + str(seednum) + '\n')
+    diff = int(lmax)+1 - int(lmin)
+    print diff
+    print int(lmax),int(lmin)
+    seednumnew = random.sample(range(1000,9999), diff)
 
- #   f.write('seed[10] =' + str(seed))
- #   f.write('seed[11] =' + str(seed))
- #   f.write('seed[12] =' + str(seed))
- #   f.write('seed[13] =' + str(seed))
+    seedi = 0
+    for level in range(int(lmin),int(lmax)+1):
+        if level != seedlevel:
+            seeduse = seednumnew[seedi]
+            f.write('seed[' + str(level) + ']              = ' + str(seeduse) + '\n')
+            seedi += 1
+    
+    f.write('seed[' + str(seedlevel) + ']              = ' + str(seednum) + '\n')
+
     f.write('\n')
     f.write('[output]' + '\n')
 
@@ -747,6 +771,7 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
 
     f.write('format               = ' + str(outformat) + '\n')
     f.write('filename             = ' + str(icfilename) + '\n')
+    f.write('gadget_num_files     = ' + str(noutput) + '\n')
     f.write('\n')
     f.write('[poisson]' + '\n')
     f.write('fft_fine             = ' + str(fftfine) + '\n')
@@ -761,7 +786,7 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
 def constructparentconf(confname,boxlength,zinit,lTF,padding,overlap,refcentx,refcenty,refcentz, \
                          refextx,refexty,refextz,align,baryons,use2LPT,useLLA,omegam,omegal,omegab,hubble, \
                          sigma8,nspec,transfer,seed,outformat,icfilename,fftfine,accuracy,presmooth,postsmooth, \
-                         smoother,laplaceorder,gradorder,boxlevel,periodicTFstr):
+                         smoother,laplaceorder,gradorder,boxlevel,periodicTFstr,noutput):
     
     f = open(confname,'w')
     f.write('[setup]' + '\n')
@@ -775,7 +800,7 @@ def constructparentconf(confname,boxlength,zinit,lTF,padding,overlap,refcentx,re
     f.write('ref_center           = ' + str(refcentx) + ', ' + str(refcenty) + ', ' + str(refcentz) + '\n')
     f.write('ref_extent           = ' + str(refextx) + ', ' + str(refexty) + ', ' + str(refextz) + '\n')
     f.write('align_top            = ' + str(align) + '\n')
-    f.write('Baryons              = ' + str(baryons) + '\n')
+    f.write('baryons              = ' + str(baryons) + '\n')
     f.write('use_2LPT             = ' + str(use2LPT) + '\n')
     f.write('use_2LLA             = ' + str(useLLA) + '\n')
     f.write('periodic_TF          = ' + str(periodicTFstr) + '\n')
@@ -803,6 +828,7 @@ def constructparentconf(confname,boxlength,zinit,lTF,padding,overlap,refcentx,re
 
     f.write('format               = ' + str(outformat) + '\n')
     f.write('filename             = ' + str(icfilename) + '\n')
+    f.write('gadget_num_files     = ' + str(noutput) + '\n')
     f.write('\n')
     f.write('[poisson]' + '\n')
     f.write('fft_fine             = ' + str(fftfine) + '\n')
