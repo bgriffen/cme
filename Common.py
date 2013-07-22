@@ -7,7 +7,7 @@ from enthought.traits.ui.api import View,UItem, Item,Group, Heading, Label, \
         HSplit, Handler, CheckListEditor, EnumEditor, TableEditor, \
         ListEditor, Tabbed, VGroup, HGroup, RangeEditor, Spring, spring
 from enthought.traits.ui.menu import NoButtons
-
+from traitsui.ui_editors.array_view_editor import ArrayViewEditor
 #from traits.api import Array
 #from enthought.traits.api import Any, Instance
 from enthought.traits.ui.wx.editor import Editor
