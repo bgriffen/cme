@@ -1,4 +1,4 @@
 cme
 ===
 
-Cosmology Made Easy
+Caterpillar Made Easy
