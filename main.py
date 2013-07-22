@@ -1,12 +1,12 @@
 
 from header import Header
 from install import InstallFiles
-from existence import Existence
 from ics import InitialConditions
 from gadgetrun import GadgetRun
 from halos import HaloFind
 from mergertree import MergerTree
 from analysis import Analysis
+from candidates import Candidates
 
 from tvtk.pyface.scene_editor import SceneEditor
 from mayavi.tools.mlab_scene_model import MlabSceneModel
@@ -20,11 +20,12 @@ class ApplicationMain(HasTraits):
 
     headertab = Instance(Header)
     installtab = Instance(InstallFiles)
-    existencetab = Instance(Existence)
+    #existencetab = Instance(Existence)
     initstab = Instance(InitialConditions)
     gadgetruntab = Instance(GadgetRun)
     halofindtab = Instance(HaloFind)
     mergertreetab = Instance(MergerTree)
+    candidatestab = Instance(Candidates)
     #analysistab = Instance(Analysis)
 
     display = Instance(Figure)
@@ -38,9 +39,10 @@ class ApplicationMain(HasTraits):
                                       Item(name='markersize', label="Size",springy=True)), label='Display'),
                                Item(name='scene',label='Mayavi',editor=SceneEditor(scene_class=MayaviScene)),show_labels=False)
 
-#Item('existencetab', style='custom', label='Existence',show_label=False),
+#
     right_panel = Tabbed(Item('headertab', style='custom', label='Home',show_label=False),
                          Item('installtab', style='custom', label='Install',show_label=False),
+                         Item('candidatestab', style='custom', label='Candidates',show_label=False),
                          Item('initstab', style='custom', label='Initial Conditions',show_label=False),
                          Item('gadgetruntab', style='custom', label='Gadget',show_label=False),
                          Item('halofindtab', style='custom', label='Halo Finder',show_label=False),
@@ -78,9 +80,6 @@ class ApplicationMain(HasTraits):
     def _installtab_default(self):
         return InstallFiles(self)
 
-    def _existencetab_default(self):
-        return Existence(self)
-
     def _initstab_default(self):
         return InitialConditions(self)
 
@@ -95,6 +94,10 @@ class ApplicationMain(HasTraits):
 
     def _analysistab_default(self):
         return Analysis(self)
+
+    def _candidatestab_default(self):
+        return Candidates(self)
+        
 
     def _markercolor_changed(self):
         ax = self.display.axes[0]
