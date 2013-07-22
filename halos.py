@@ -6,12 +6,16 @@ class HaloFind(HasTraits):
 
     x_scale = Enum(['linear','log'])
     y_scale = Enum(['linear','log'])
-    haloid = Enum(['190897','208737','140666','28221','147419','28188','147273','78411','131988','19910'])
+    #haloid = Enum([])
+    #haloid = List(Int)
+    haloid = Int()
+    #Enum(['190897','208737','140666','28221','147419','28188','147273','78411','131988','19910'])
     snapshot = Range(0,64,63)
     halo_type = Enum(['all halos','hosts only','subhalos only'])
     fullboxopt = Enum(['full box','specific halo'])
-    deltar = Range(0,10,5)
+    deltar = Range(0.0,10.0,5.0)
     id_select = Int(0)
+    haloidlist = List(Int)
 
     halo_varx  = Enum(['id','posX','posY','posZ','corevelx','corevely','corevelz', \
           'pecVX','pecVY','pecVZ', 'bulkvelX','bulkvelY','bulkvelZ','mvir',\
@@ -30,9 +34,9 @@ class HaloFind(HasTraits):
           'hostID','offset','particle_offset'])
     
     quiver_mode = Enum(['2darrow','2dcircle','2dcross','2ddash','2ddiamond','2dhooked_arrow','2dsquare','2dthick_arrow','2dthick_cross','2dtriangle','2dvertex','arrow','axes','cone','cube','cylinder','point','sphere'])
-    
+    enable_haloglyps = Bool(False)
     plot_button = Button('Plot')
-    plotxyzrvir_button = Button('Plot 3D Halo Distribution (scaled by rvir)')
+    plotxyzrvir_button = Button('Plot 3D Halo Distribution')
     quiver_button = Button('Plot 3D Halo Velocity Field')
 
     opacity_select = Range(low=0.00,high=1.00,value=1.00,auto_set=False)
@@ -43,12 +47,15 @@ class HaloFind(HasTraits):
     min_vmag = Float
     max_vmax = Float
 
+#@on_trait_change('blah,bhat')
+#def _stuff_needs_doing_bro(self):
+
     view = View(VGroup(Item(name='halopath',style='readonly'),
                        Item(name='snapshot',label='Snapshot'),
-                 HGroup(Item(name='halo_type',style='custom',show_label=False)),
+                 HGroup(Item(name='halo_type',style='custom',show_label=False),enabled_when='fullboxopt=="full box"'),
                         Item(name='fullboxopt',style='custom',show_label=False),
-                            Group(HGroup(Item(name='haloid',label='Rockstar Halo ID'),
-                                         Item(name='deltar',label='Box Width [Mpc/h]',springy=True),springy=True)
+                        Group(Item(name='haloid',label='Rockstar Halo ID'),enabled_when='fullboxopt=="specific halo"'),
+                            Group(HGroup(Item(name='deltar',label='Box Width [Mpc/h]',springy=True),springy=True)
                                 ,enabled_when='fullboxopt=="specific halo"'),
 
                        HGroup(HGroup(HGroup(Group(HGroup(VGroup(Group(Item(name='halo_varx',label='x-axis',springy=True),
@@ -58,10 +65,13 @@ class HaloFind(HasTraits):
                                      Item(name='y_scale',label='y-scale',springy=True))),label='Set Scale',show_border=True)),enabled_when='use_common == True')),
 
                        Group(Item(name='plot_button',show_label=False,springy=True),enabled_when='len(halo_type) > 0'),
-                       Group(HGroup(Item(name='quiver_button',show_label=False,springy=True),Item(name='plotxyzrvir_button',show_label=False,springy=True))),
+                       Group(HGroup(Item(name='enable_haloglyps',label='+halos'),
+                                Item(name='quiver_button',show_label=False,springy=True),
+                                Item(name='plotxyzrvir_button',show_label=False,springy=True))),
                        Group(VGroup(Item(name='quiver_mode',label='Mode',padding=5),
                              HGroup(Item(name='vmin_select',label='vmin',padding=5,springy=True),Item(name='vmax_select',label='vmax',padding=5,springy=True)),
-                             HGroup(Item(name='opacity_select',label='opacity',padding=5,springy=True),Item(name='quiver_width',label='width',padding=5,springy=True))))))
+                             HGroup(Item(name='opacity_select',label='opacity',padding=5,springy=True),Item(name='quiver_width',label='width',padding=5,springy=True)))),
+                        Group(Item(name='haloidlist',show_label=False,style='readonly',editor=ListEditor(style='readonly',columns=6,rows=4)),label='Halo Sample',show_border=True)))
     
     def _plot_button_fired(self):
         if hasattr(self, 'display_points'):
@@ -90,19 +100,19 @@ class HaloFind(HasTraits):
 
         wx.CallAfter(self.main.display.canvas.draw)
 
-    def _quiver_button_fired(self):
-        x,y,z,vx,vy,vz = self.gethalos_xyzvzvyvz()
-        
-        self.main.scene.mlab.clf(figure=self.main.scene.mayavi_scene) 
-        self.min_vmag = 0
-        self.max_vmag = 10000
-        self.main.scene.mlab.quiver3d(np.array(x), np.array(y), np.array(z), np.array(vx), np.array(vy), np.array(vz),line_width=self.quiver_width,opacity=self.opacity_select,mode=self.quiver_mode)
-        self.main.scene.mlab.xlabel('x-pos')
-        self.main.scene.mlab.ylabel('y-pos')
-        self.main.scene.mlab.zlabel('z-pos')
-        self.main.scene.mlab.colorbar(orientation='horizontal',title='velocity [km/s]')
-        self.main.scene.mlab.show()
-        self.main.scene.mlab.outline()
+#    def _quiver_button_fired(self):
+#        x,y,z,vx,vy,vz = self.gethalos_xyzvzvyvz()
+#        
+#        self.main.scene.mlab.clf(figure=self.main.scene.mayavi_scene) 
+#        self.min_vmag = 0
+#        self.max_vmag = 10000
+#        self.main.scene.mlab.quiver3d(np.array(x), np.array(y), np.array(z), np.array(vx), np.array(vy), np.array(vz),line_width=self.quiver_width,opacity=self.opacity_select,mode=self.quiver_mode)
+#        self.main.scene.mlab.xlabel('x-pos')
+#        self.main.scene.mlab.ylabel('y-pos')
+#        self.main.scene.mlab.zlabel('z-pos')
+#        self.main.scene.mlab.colorbar(orientation='horizontal',title='velocity [km/s]')
+#        self.main.scene.mlab.show()
+ #       self.main.scene.mlab.outline()
 
     def _quiver_button_fired(self):
         self.main.scene.mlab.clf(figure=self.main.scene.mayavi_scene)
@@ -124,6 +134,7 @@ class HaloFind(HasTraits):
             vx = np.array(tmphalos['pecVX'])
             vy = np.array(tmphalos['pecVY'])
             vz = np.array(tmphalos['pecVZ'])
+            #vmag = np.sqrt(vx**2+vy**2+vz**2)
 
         else:
             allhalos = halodata.get_hosts()
@@ -145,9 +156,16 @@ class HaloFind(HasTraits):
             vx = np.array(halodata.data['pecVX'][condh])
             vy = np.array(halodata.data['pecVY'][condh])
             vz = np.array(halodata.data['pecVZ'][condh])
+            rvir = np.array(halodata.data['rvir'][condh])
 
-        self.main.scene.mlab.clf(figure=self.main.scene.mayavi_scene) 
-        self.main.scene.mlab.quiver3d(x,y,z,vx,vy,vz,line_width=self.quiver_width,opacity=self.opacity_select,mode=self.quiver_mode)
+            
+
+        vmag = np.sqrt(vx**2+vy**2+vz**2)
+        self.main.scene.mlab.quiver3d(x,y,z,vx,vy,vz,line_width=self.quiver_width,opacity=self.opacity_select,mode=self.quiver_mode,scalars=vmag)
+        
+        if self.enable_haloglyps and self.fullboxopt == 'specific halo':
+                self.main.scene.mlab.points3d(x, y, z, rvir/1000)
+
         self.main.scene.mlab.xlabel('x-pos')
         self.main.scene.mlab.ylabel('y-pos')
         self.main.scene.mlab.zlabel('z-pos')
@@ -262,6 +280,8 @@ class HaloFind(HasTraits):
     def __init__(self, main, **kwargs):
         HasTraits.__init__(self)
         self.main = main
+        self.quiver_mode = 'arrow'
+        self.haloidlist = self.main.candidatestab.haloid
         self.halo_varx = 'posX'
         self.halo_vary = 'posY'
         self.halopath = self.main.headertab.parentsimpath + 'RockstarData'
