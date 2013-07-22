@@ -5,7 +5,7 @@ from ics import InitialConditions
 from gadgetrun import GadgetRun
 from halos import HaloFind
 from mergertree import MergerTree
-from analysis import Analysis
+#from analysis import Analysis
 from candidates import Candidates
 
 from tvtk.pyface.scene_editor import SceneEditor
