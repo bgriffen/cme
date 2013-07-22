@@ -2,6 +2,8 @@ from Common import *
 from glob import glob
 import subprocess
 import random
+import modules.convertfiles.reWriteIC as re
+
 class InitialConditions(HasTraits):
 
     masterpath = Directory
@@ -55,8 +57,9 @@ class InitialConditions(HasTraits):
     boxtype = List( editor = CheckListEditor(values = ['ellipsoid','box'],cols=2))
     tranfunc = List( editor = CheckListEditor(values = ['eisenstein','bbks','camb'],cols=1))
 
-    haloid = Enum(['190897','208737','140666','28221','147419','28188','147273','78411','131988','19910'])
-    #haloid = Int(0)
+    haloidselect = Int()
+    #Enum(['190897','208737','140666','28221','147419','28188','147273','78411','131988','19910'])
+    haloid = List(Int)
 
     #OUTPUT
     outformat = Enum(['gadget','enzo','grafic2','generic','tipsy'])
@@ -112,9 +115,9 @@ class InitialConditions(HasTraits):
                           Item(name='candidatefiledir' ,label='Candidate Dir.',style='readonly'),
                           Item(name='candidatefilename' ,label='Candidate List'),
                           Item(name='lagroutputdir' ,label='Output Dir.',style='readonly'),
-                          Item(name='lagroutputname' ,label='Output Filename'),
+                          Item(name='lagroutputname' ,label='Output Filename',style='readonly'),
 
-                          Item(name='haloid',label='Halo ID'),
+                          Item(name='haloidselect',label='Halo ID'),
                           Item(name='nrvir',label='N*Rvir(z=0)',style='custom'),
                           Group(HGroup(Item(name='writelagrfile',label='Write File'),
                                        Item(name='makeic_button',show_label=False,springy=True),
@@ -136,6 +139,7 @@ class InitialConditions(HasTraits):
                                  Item(name='exty',label='Lagrangian Extent Y',style='readonly',springy=True)),
                           HGroup(Item(name='centz',label='Lagrangian Center Z',style='readonly',springy=True),
                                  Item(name='extz',label='Lagrangian Extent Z',style='readonly',springy=True)),label='Lagrangian Information'),
+                          Group(Item(name='haloid',show_label=False,style='readonly',editor=ListEditor(style='readonly',columns=6,rows=4)),label='Halo Sample',show_border=True),
                           label='Caterpillar'),
 
                       Group(HGroup(Item(name='parentbox',show_label=False),
@@ -160,7 +164,7 @@ class InitialConditions(HasTraits):
                                                       HGroup(Item(name='parentseedlevel',label='Seed Level',style='readonly'),
                                                              Item(name='parentseednum',label='Seed Value',style='readonly')),
                                                       Item(name='resimlagrdir',label='Pointer Directory'),
-                                                      HGroup(Item(name='haloid',label='HaloID'),
+                                                      HGroup(Item(name='haloidselect',label='HaloID'),
                                                         Item(name='resimlagrfile',label='Pointer File',springy=True)),
                                                       Item(name='nrvir',label='N*Rvir(z=0)',style='custom'))
                                        ,enabled_when='resimbox==True'),enabled_when='parentbox==False')
@@ -249,6 +253,7 @@ class InitialConditions(HasTraits):
                     print "EXECUTING..."
                     print runmusic
                     subprocess.call(';'.join([cding, runmusic]), shell=True)
+                    re.getBlocks(writepath)
 
         else:
             for cosmi in self.cosmologylist:
@@ -258,7 +263,7 @@ class InitialConditions(HasTraits):
                             for lmini in self.lmin:
                                 for lmaxi in self.lmax:
                                   for overlapi in self.overlap:
-                                      foldername = 'H' + str(self.haloid) + \
+                                      foldername = 'H' + str(self.haloidselect) + \
                                                   '_B' + str(boxtypei.upper())[0] + \
                                                   '_Z' + str(self.zinit) + \
                                                   '_P' + str(paddingi) + \
@@ -270,7 +275,7 @@ class InitialConditions(HasTraits):
                                       if not os.path.exists(self.outpath + 'halos/' + foldername):
                                           os.makedirs(self.outpath + 'halos/' + foldername)
         
-                                      pointfile = self.outpath  + 'ics/lagr/HALO' + str(self.haloid) + 'NRVIR' + str(int(nrviri))
+                                      pointfile = self.outpath  + 'ics/lagr/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
                                       writepath = self.outpath + 'halos/' + foldername
                                       confname = self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
     
@@ -297,43 +302,42 @@ class InitialConditions(HasTraits):
                                       print "EXECUTING..."
                                       print runmusic
                                       subprocess.call(';'.join([cding, runmusic]), shell=True)
-                                      
-                                      cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
-                                      runconvert = "python convertics.py"
-                                      rmconvert = "rm reWriteIC.py convertics.py"
-
-                                      subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
+                                      #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
+                                      #runconvert = "python convertics.py"
+                                      #rmconvert = "rm reWriteIC.py convertics.py"
+                                      re.getBlocks(writepath)
+                                      #subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
 
     def _masterpath_changed(self):
       self.candidatefiledir = self.main.headertab.datamasterpath
       self.main.headertab.masterpath = self.masterpath
-      self.main.existencetab.masterpath = self.masterpath
+      #self.main.existencetab.masterpath = self.masterpath
       #self.lagroutputdir = self.main.headertab.masterpath + '/' + self.toplagr
 
-    def _haloid_changed(self):
-      self.lagroutputname = 'HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
-      self.resimlagrfile = 'halos' + str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+    def _haloidselect_changed(self):
+      self.lagroutputname = 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = 'halos' + str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
       self._existencebutton_fired()
 
     def _nrvir_changed(self):
-      self.lagroutputname = 'HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+      self.lagroutputname = 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
       self._existencebutton_fired()
 
     def _toplagr_changed(self):
       self.lagroutputdir = str(self.main.headertab.datamasterpath) + str(self.toplagr)
-      self.lagroutputname = 'HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+      self.lagroutputname = 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
       self._existencebutton_fired()
 
     def _resimlagrdir_changed(self):
       self.resimlagrdir = str(self.main.headertab.datamasterpath)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
     def _resimlagrfile_changed(self):
       self.resimlagrdir = str(self.main.headertab.datamasterpath)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
     def _parentsimpath_changed(self):
       if len(os.path.basename(glob(self.parentsimpath + "*.conf")[0])) == 1:
@@ -344,7 +348,7 @@ class InitialConditions(HasTraits):
 
     def _existencebutton_fired(self):
         if len(self.nrvir) == 1:
-            filename = self.lagroutputdir + '/HALO' + str(self.haloid) + 'NRVIR' + str(int(self.nrvir[0]))
+            filename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(self.nrvir[0]))
             try:
                 with open(filename):
                     self.filestatus = 'Lagrangian file exists.'
@@ -420,11 +424,11 @@ class InitialConditions(HasTraits):
 
     def _makeic_button_fired(self):
         for Nrvir in self.nrvir:
-            filename = self.lagroutputdir + '/HALO' + str(self.haloid) + 'NRVIR' + str(int(Nrvir))
+            filename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
             try:
                 with open(filename):
                     if len(self.nrvir) == 1:
-                        print "Visualising:", 'HALO' + str(self.haloid) + 'NRVIR' + str(int(self.nrvir[0]))
+                        print "Visualising:", 'HALO' + str(self.haloidselect) + 'NRVIR' + str(int(self.nrvir[0]))
                         figure = self.main.display
                         figure.clear()
                         ax = figure.add_subplot(111)
@@ -500,7 +504,7 @@ class InitialConditions(HasTraits):
                 halopath = self.main.headertab.parentsimpath + 'RockstarData'
                 halodata = RSDataReader.RSDataReader(halopath,63,digits=2)
                 allhalos = halodata.get_hosts()
-                idhalo = int(self.haloid)
+                idhalo = int(self.haloidselect)
                 idcand = getcandidatelist(self.candidatefiledir + self.candidatefilename)
                 idcand = idcand[:,0]
                 for index in xrange(0,len(idcand)):
@@ -535,7 +539,7 @@ class InitialConditions(HasTraits):
                 self.halorvir = '{:.2f}'.format(float(allhalos.ix[idhalo]['rvir']))
 
                 for Nrvir in self.nrvir:
-                    print 'Constructing: HALO' + str(self.haloid) + 'NRVIR' + str(int(Nrvir))
+                    print 'Constructing: HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
                     Nrvir = float(Nrvir)
                     ext = "/512Parent/outputs/snapdir_063/snap_063"
                     snapPOS = rsHD.read_block(self.main.headertab.parentsimpath+ext,"POS ")
@@ -574,7 +578,7 @@ class InitialConditions(HasTraits):
                     self.extz=2.0*dz*1.12/header.boxsize
     
                     if len(self.nrvir) == 1:
-                        print "Visualising:", 'HALO' + str(self.haloid) + 'NRVIR' + str(int(self.nrvir[0]))
+                        print "Visualising:", 'HALO' + str(self.haloidselect) + 'NRVIR' + str(int(self.nrvir[0]))
                         figure = self.main.display
                         figure.clear()
                         ax = figure.add_subplot(111)
@@ -635,7 +639,7 @@ class InitialConditions(HasTraits):
                         self.zpos = lagrPos[:,2]
 
                     if self.writelagrfile == True:
-                        headerfilename = self.lagroutputdir + '/HALO' + str(self.haloid) + 'NRVIR' + str(int(Nrvir)) + '.head'
+                        headerfilename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir)) + '.head'
                         f1=open(headerfilename,'w')
                         f1.write('#' + str(self.centx) + '\n')
                         f1.write('#' + str(self.centy) + '\n')
@@ -645,7 +649,7 @@ class InitialConditions(HasTraits):
                         f1.write('#' + str(self.extz) + '\n')
                         f1.close()
 
-                        filename = self.lagroutputdir + '/HALO' + str(self.haloid) + 'NRVIR' + str(int(Nrvir))
+                        filename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
                         f2=open(filename,'w')
                         for iv in xrange(0,len(lagrPos[:,0])):
                             f2.write(str(lagrPos[iv,0]/header.boxsize)+' '+str(lagrPos[iv,1]/header.boxsize)+' '+ str(lagrPos[iv,2]/header.boxsize)+'\n')                
@@ -657,8 +661,8 @@ class InitialConditions(HasTraits):
     def __init__(self, main, **kwargs):
         HasTraits.__init__(self)
         self.main = main
-        self.haloid = self.main.existencetab.haloid 
         self.musicpath = self.main.headertab.musicpath
+        self.haloid = self.main.candidatestab.haloid
 
         self.candidatefiledir = self.main.headertab.datamasterpath
         self.candidatefilename = 'candidates.dat'
@@ -676,9 +680,9 @@ class InitialConditions(HasTraits):
         self.cosmologylist = ['PLANCK']
         self.laplaceorder = 6
         self.grad_order = 6
-        self.lagroutput = str(self.main.headertab.masterpath) + '/' + str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+        self.lagroutput = str(self.main.headertab.masterpath) + '/' + str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         self.resimlagrdir = str(self.main.headertab.datamasterpath)
-        self.resimlagrfile = '/' + str(self.toplagr) + '/HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+        self.resimlagrfile = '/' + str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         self.masterpath = self.main.headertab.masterpath
         self.outfilename = 'ics'
         self.parenticpath = self.main.headertab.parentsimpath + 'RockstarData/ics/'
@@ -697,7 +701,7 @@ class InitialConditions(HasTraits):
         #self.parentsimconf = 'ics_example.conf'
         self.parentsimpath = self.main.headertab.parentsimpath + '512Parent/ics/'
         self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
-        self.resimdir = str(self.main.headertab.datamasterpath) + str(self.toplagr) + 'HALO' + str(self.haloid) + 'NRVIR' + str(self.nrvir)
+        self.resimdir = str(self.main.headertab.datamasterpath) + str(self.toplagr) + 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         filename = self.parentsimpath + self.parentsimconf
         self.parentseedlevel = 9
         self.parentseednum = 34567
