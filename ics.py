@@ -1,6 +1,6 @@
 from Common import *
 from glob import glob
-import subprocess
+
 import random
 import modules.convertfiles.reWriteIC as re
 
@@ -221,6 +221,8 @@ class InitialConditions(HasTraits):
                                 '_Z' + str(self.zinit) + \
                                 '_LMIN' + str(self.boxlevel)
 
+                    #filepath = self.outpath + 'halos/H' + str(self.haloid) + '/' + foldername
+
                     if not os.path.exists(self.outpath + 'parent/'):
                         os.makedirs(self.outpath + 'parent/')
 
@@ -271,42 +273,49 @@ class InitialConditions(HasTraits):
                                                   '_LX' + str(lmaxi) + \
                                                   '_O' + str(overlapi) + \
                                                   '_NV' + str(nrviri)
-            
-                                      if not os.path.exists(self.outpath + 'halos/' + foldername):
-                                          os.makedirs(self.outpath + 'halos/' + foldername)
-        
-                                      pointfile = self.outpath  + 'ics/lagr/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
-                                      writepath = self.outpath + 'halos/' + foldername
-                                      confname = self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
-    
-                                      self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
-    
-                                      omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
-
-                                      baryonsstr = determineboolstr(self.baryons)
-                                      use2LPTstr = determineboolstr(self.use2LPT)
-                                      useLLAstr = determineboolstr(self.useLLA)
-                                      periodicTFstr = determineboolstr(self.periodicTF)
-                                      fftfinestr = determineboolstr(self.fftfine)
-                                      alignstr = determineboolstr(self.align)
-                                      boxlength = 100
-        
-                                      constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.refx,self.refy,self.refz, \
-                                                             self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
-                                                             sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
-                                                             self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
                                       
-                                      self.confstatus = 'Generated halo configuration files.'
-                                      runmusic = self.musicpath + '/MUSIC ' + confname
-                                      cding = "cd " + writepath
-                                      print "EXECUTING..."
-                                      print runmusic
-                                      subprocess.call(';'.join([cding, runmusic]), shell=True)
-                                      #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
-                                      #runconvert = "python convertics.py"
-                                      #rmconvert = "rm reWriteIC.py convertics.py"
-                                      re.getBlocks(writepath)
-                                      #subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
+                                      filepath = self.outpath + 'halos/H' + str(self.haloid) + '/' + foldername
+
+                                      if os.path.exists(filepath):
+                                          self.confstatus = 'DIR EXIST!'
+
+                                      elif not os.path.exists(filepath):
+                                          os.makedirs(filepath)
+
+                                          pointfile = self.outpath  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
+                                          writepath = filepath
+                                          #self.outpath + 'halos/' + foldername
+                                          confname = filepath
+                                          #self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
+        
+                                          self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
+        
+                                          omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
+    
+                                          baryonsstr = determineboolstr(self.baryons)
+                                          use2LPTstr = determineboolstr(self.use2LPT)
+                                          useLLAstr = determineboolstr(self.useLLA)
+                                          periodicTFstr = determineboolstr(self.periodicTF)
+                                          fftfinestr = determineboolstr(self.fftfine)
+                                          alignstr = determineboolstr(self.align)
+                                          boxlength = 100
+            
+                                          constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.refx,self.refy,self.refz, \
+                                                                 self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
+                                                                 sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
+                                                                 self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
+                                          
+                                          self.confstatus = 'Generated halo configuration files.'
+                                          runmusic = self.musicpath + '/MUSIC ' + confname
+                                          cding = "cd " + writepath
+                                          print "EXECUTING..."
+                                          print runmusic
+                                          subprocess.call(';'.join([cding, runmusic]), shell=True)
+                                          #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
+                                          #runconvert = "python convertics.py"
+                                          #rmconvert = "rm reWriteIC.py convertics.py"
+                                          re.getBlocks(writepath)
+                                          #subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
 
     def _masterpath_changed(self):
       self.candidatefiledir = self.main.headertab.datamasterpath
@@ -316,28 +325,28 @@ class InitialConditions(HasTraits):
 
     def _haloidselect_changed(self):
       self.lagroutputname = 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
-      self.resimlagrfile = 'halos' + str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = 'halos' + str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
       self._existencebutton_fired()
 
     def _nrvir_changed(self):
       self.lagroutputname = 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
       self._existencebutton_fired()
 
     def _toplagr_changed(self):
       self.lagroutputdir = str(self.main.headertab.datamasterpath) + str(self.toplagr)
-      self.lagroutputname = 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.lagroutputname = 'H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
       self._existencebutton_fired()
 
     def _resimlagrdir_changed(self):
       self.resimlagrdir = str(self.main.headertab.datamasterpath)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
     def _resimlagrfile_changed(self):
       self.resimlagrdir = str(self.main.headertab.datamasterpath)
-      self.resimlagrfile = str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+      self.resimlagrfile = str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
     def _parentsimpath_changed(self):
       if len(os.path.basename(glob(self.parentsimpath + "*.conf")[0])) == 1:
@@ -348,7 +357,7 @@ class InitialConditions(HasTraits):
 
     def _existencebutton_fired(self):
         if len(self.nrvir) == 1:
-            filename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(self.nrvir[0]))
+            filename = self.lagroutputdir + '/H' + str(self.haloidselect) + 'NRVIR' + str(int(self.nrvir[0]))
             try:
                 with open(filename):
                     self.filestatus = 'Lagrangian file exists.'
@@ -424,7 +433,7 @@ class InitialConditions(HasTraits):
 
     def _makeic_button_fired(self):
         for Nrvir in self.nrvir:
-            filename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
+            filename = self.lagroutputdir + '/H' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
             try:
                 with open(filename):
                     if len(self.nrvir) == 1:
@@ -539,7 +548,7 @@ class InitialConditions(HasTraits):
                 self.halorvir = '{:.2f}'.format(float(allhalos.ix[idhalo]['rvir']))
 
                 for Nrvir in self.nrvir:
-                    print 'Constructing: HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
+                    print 'Constructing: H' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
                     Nrvir = float(Nrvir)
                     ext = "/512Parent/outputs/snapdir_063/snap_063"
                     snapPOS = rsHD.read_block(self.main.headertab.parentsimpath+ext,"POS ")
@@ -639,7 +648,7 @@ class InitialConditions(HasTraits):
                         self.zpos = lagrPos[:,2]
 
                     if self.writelagrfile == True:
-                        headerfilename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir)) + '.head'
+                        headerfilename = self.lagroutputdir + '/H' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir)) + '.head'
                         f1=open(headerfilename,'w')
                         f1.write('#' + str(self.centx) + '\n')
                         f1.write('#' + str(self.centy) + '\n')
@@ -649,7 +658,7 @@ class InitialConditions(HasTraits):
                         f1.write('#' + str(self.extz) + '\n')
                         f1.close()
 
-                        filename = self.lagroutputdir + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
+                        filename = self.lagroutputdir + '/H' + str(self.haloidselect) + 'NRVIR' + str(int(Nrvir))
                         f2=open(filename,'w')
                         for iv in xrange(0,len(lagrPos[:,0])):
                             f2.write(str(lagrPos[iv,0]/header.boxsize)+' '+str(lagrPos[iv,1]/header.boxsize)+' '+ str(lagrPos[iv,2]/header.boxsize)+'\n')                
@@ -680,9 +689,9 @@ class InitialConditions(HasTraits):
         self.cosmologylist = ['PLANCK']
         self.laplaceorder = 6
         self.grad_order = 6
-        self.lagroutput = str(self.main.headertab.masterpath) + '/' + str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+        self.lagroutput = str(self.main.headertab.masterpath) + '/' + str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         self.resimlagrdir = str(self.main.headertab.datamasterpath)
-        self.resimlagrfile = '/' + str(self.toplagr) + '/HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+        self.resimlagrfile = '/' + str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         self.masterpath = self.main.headertab.masterpath
         self.outfilename = 'ics'
         self.parenticpath = self.main.headertab.parentsimpath + 'RockstarData/ics/'
@@ -701,7 +710,7 @@ class InitialConditions(HasTraits):
         #self.parentsimconf = 'ics_example.conf'
         self.parentsimpath = self.main.headertab.parentsimpath + '512Parent/ics/'
         self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
-        self.resimdir = str(self.main.headertab.datamasterpath) + str(self.toplagr) + 'HALO' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
+        self.resimdir = str(self.main.headertab.datamasterpath) + str(self.toplagr) + 'H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         filename = self.parentsimpath + self.parentsimconf
         self.parentseedlevel = 9
         self.parentseednum = 34567
@@ -852,53 +861,3 @@ def determineboolstr(boolean):
 
     return returnstr
 
-def cosmoconstant(cosmology):
-#    if cosmology == 'WMAP1':
-#        omegam = 
-#        omegal = 
-#        omegab = 
-#        hubble = 
-#        sigma8 = 
-#        nspec = 
-#    
-#    if cosmology == 'WMAP3':
-#        omegam = 
-#        omegal = 
-#        omegab = 
-#        hubble = 
-#        sigma8 = 
-#        nspec = 
-#  
-#    if cosmology == 'WMAP5':
-#        omegam = 
-#        omegal = 
-#        omegab = 
-#        hubble = 
-#        sigma8 = 
-#        nspec = 
-    
-    if cosmology == 'WMAP7':
-        omegam = 0.276
-        omegal = 0.724
-        omegab = 0.045
-        hubble = 70.3
-        sigma8 = 0.811
-        nspec = 0.961
-    
-#    if cosmology == 'WMAP9':
-#        omegam = 
-#        omegal = 
-#        omegab = 
-#        hubble = 
-#        sigma8 = 
-#        nspec = 
-    
-    if cosmology == 'PLANCK':
-        omegam = 0.3175
-        omegal = 0.6825
-        omegab = 0.0489991
-        hubble = 67.11
-        sigma8 = 0.8344
-        nspec = 0.9624
-
-    return omegam,omegal,omegab,hubble,sigma8,nspec
