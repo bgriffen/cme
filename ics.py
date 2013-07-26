@@ -274,7 +274,7 @@ class InitialConditions(HasTraits):
                                                   '_O' + str(overlapi) + \
                                                   '_NV' + str(nrviri)
                                       
-                                      filepath = self.outpath + 'halos/H' + str(self.haloid) + '/' + foldername
+                                      filepath = self.outpath + 'halos/H' + str(self.haloidselect) + '/' + foldername
 
                                       if os.path.exists(filepath):
                                           self.confstatus = 'DIR EXIST!'
@@ -283,9 +283,9 @@ class InitialConditions(HasTraits):
                                           os.makedirs(filepath)
 
                                           pointfile = self.outpath  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
-                                          writepath = filepath
+                                          writepath = filepath 
                                           #self.outpath + 'halos/' + foldername
-                                          confname = filepath
+                                          confname = filepath + '/' + foldername
                                           #self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
         
                                           self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
