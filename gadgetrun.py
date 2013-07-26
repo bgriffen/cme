@@ -75,6 +75,10 @@ class GadgetRun(HasTraits):
   ErrTolThetaSubfind = Float
   DesLinkNgb = Int
 
+  PMGRID = Int(512)
+  ENABLE_SUBFIND = Bool(False)
+  FOF_SECONDARY_LINK_TYPES = Str()
+
   gadpath = Directory
   checkexistence_button = Button("Check Existence")
   createconfig_button = Button("Make and distribute gadget!")
@@ -176,7 +180,10 @@ class GadgetRun(HasTraits):
               Item('SofteningBndryMaxPhys',label='SofteningBndryMaxPhys'),
               Item('ArtBulkViscConst' ,label='ArtBulkViscConst '),label='Softening'),
 
-              Group(Item('createconfig_button',show_label=False),label='Write'))
+              Group(HGroup(Item('PMGRID',label='PMGRID'),
+                    Item('ENABLE_SUBFIND',label='Subfind'),
+                    Group(Item('FOF_SECONDARY_LINK_TYPES',label='FOF_SECONDARY_LINK_TYPES'),enabled_when='ENABLE_SUBFIND==True',springy=True)),
+                    Item('createconfig_button',show_label=False),label='Write'))
     
   def _BoxSize_changed(self):
       self.SofteningGas = 0.0
@@ -519,4 +526,5 @@ class GadgetRun(HasTraits):
       self.ArtBulkViscConst = 1.0
       self.ErrTolThetaSubfind = 0.7
       self.DesLinkNgb = 20
+      self.FOF_SECONDARY_LINK_TYPES = '4+8+16+32'
     
