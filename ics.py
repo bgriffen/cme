@@ -104,7 +104,6 @@ class InitialConditions(HasTraits):
     lTF = Int(9)
     boxlevel = Int(9)
     seedinit = Int(34567)
-
     makeic_button = Button("Generate/Plot Lagrangian Region(s)")
     generate_button = Button("Make directories, populate with config files and run MUSIC")
     existencebutton = Button()
@@ -121,7 +120,7 @@ class InitialConditions(HasTraits):
                           Item(name='nrvir',label='N*Rvir(z=0)',style='custom'),
                           Group(HGroup(Item(name='writelagrfile',label='Write File'),
                                        Item(name='makeic_button',show_label=False,springy=True),
-                                       Item(name='projopt',show_label=False))),
+                                       Item(name='projopt',show_label=False)),enabled_when='haloidselect in haloid'),
                           Group(Item(name='filestatus',label='Status',style='readonly')),
 
                           Group(HGroup(Item(name='rockstarhaloid',label='Halo ID',style='readonly',springy=True),
@@ -202,7 +201,7 @@ class InitialConditions(HasTraits):
                                          Item(name='outpath',label='File Dir.',springy=True)),
                                   Group(Item(name='outfilename',label='IC File Name')),
                                   Item(name='confstatus',label='Status',style='readonly'),
-                                  Group(Item(name='generate_button',show_label=False)),label='Output')))
+                                  Group(Item(name='generate_button',show_label=False),enabled_when='haloidselect in haloid'),label='Output')))
 
     def _parentbox_changed(self):
         if self.parentbox == True:
@@ -213,109 +212,112 @@ class InitialConditions(HasTraits):
             self.parentbox = False
 
     def _generate_button_fired(self):
-        if self.parentbox == True:
-            for cosmi in self.cosmologylist:
-                for boxlengthi in self.boxlength:
-                    foldername = cosmi + \
-                                '_L' + str(boxlengthi) + \
-                                '_Z' + str(self.zinit) + \
-                                '_LMIN' + str(self.boxlevel)
-
-                    #filepath = self.outpath + 'halos/H' + str(self.haloid) + '/' + foldername
-
-                    if not os.path.exists(self.outpath + 'parent/'):
-                        os.makedirs(self.outpath + 'parent/')
-
-                    if not os.path.exists(self.outpath + 'parent/' + foldername):
-                        os.makedirs(self.outpath + 'parent/' + foldername)
-
-                    writepath = self.outpath + 'parent/' + foldername
-                    confname = self.outpath + 'parent/' + foldername + '/' + foldername + '.conf'
-
-
-                    omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
-
-                    baryonsstr = determineboolstr(self.baryons)
-                    use2LPTstr = determineboolstr(self.use2LPT)
-                    useLLAstr = determineboolstr(self.useLLA)
-                    periodicTFstr = determineboolstr(self.periodicTF)
-                    fftfinestr = determineboolstr(self.fftfine)
-                    alignstr = determineboolstr(self.align)
-                    padding = 8
-                    overlap = 4
-
-                    constructparentconf(confname,boxlengthi,self.zinit,self.lTF,padding,overlap,self.refx,self.refy,self.refz, \
-                                       self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
-                                       sigma8,nspec,self.tranfunc[0],self.seedinit,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
-                                       self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,self.noutput)
-
-                    self.confstatus = 'Generated halo configuration files.'
-                    runmusic = self.musicpath + '/MUSIC ' + confname
-                    cding = "cd " + writepath
-                    print "EXECUTING..."
-                    print runmusic
-                    subprocess.call(';'.join([cding, runmusic]), shell=True)
-                    re.getBlocks(writepath)
-
-        else:
-            for cosmi in self.cosmologylist:
-                for boxtypei in self.boxtype:
-                    for nrviri in self.nrvir:
-                        for paddingi in self.padding:
-                            for lmini in self.lmin:
-                                for lmaxi in self.lmax:
-                                  for overlapi in self.overlap:
-                                      foldername = 'H' + str(self.haloidselect) + \
-                                                  '_B' + str(boxtypei.upper())[0] + \
-                                                  '_Z' + str(self.zinit) + \
-                                                  '_P' + str(paddingi) + \
-                                                  '_LN' + str(lmini) + \
-                                                  '_LX' + str(lmaxi) + \
-                                                  '_O' + str(overlapi) + \
-                                                  '_NV' + str(nrviri)
-                                      
-                                      filepath = self.outpath + 'halos/H' + str(self.haloidselect) + '/' + foldername
-
-                                      if os.path.exists(filepath):
-                                          self.confstatus = 'DIR EXIST!'
-
-                                      elif not os.path.exists(filepath):
-                                          os.makedirs(filepath)
-
-                                          pointfile = self.outpath  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
-                                          writepath = filepath 
-                                          #self.outpath + 'halos/' + foldername
-                                          confname = filepath + '/' + foldername
-                                          #self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
-        
-                                          self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
-        
-                                          omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
-    
-                                          baryonsstr = determineboolstr(self.baryons)
-                                          use2LPTstr = determineboolstr(self.use2LPT)
-                                          useLLAstr = determineboolstr(self.useLLA)
-                                          periodicTFstr = determineboolstr(self.periodicTF)
-                                          fftfinestr = determineboolstr(self.fftfine)
-                                          alignstr = determineboolstr(self.align)
-                                          boxlength = 100
-            
-                                          constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.refx,self.refy,self.refz, \
-                                                                 self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
-                                                                 sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
-                                                                 self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
-                                          
-                                          self.confstatus = 'Generated halo configuration files.'
-                                          runmusic = self.musicpath + '/MUSIC ' + confname
-                                          cding = "cd " + writepath
-                                          print "EXECUTING..."
-                                          print runmusic
-                                          subprocess.call(';'.join([cding, runmusic]), shell=True)
-                                          #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
-                                          #runconvert = "python convertics.py"
-                                          #rmconvert = "rm reWriteIC.py convertics.py"
-                                          re.getBlocks(writepath)
-                                          #subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
+      if self.haloidselect in self.haloid:
+          if self.parentbox == True:
+              for cosmi in self.cosmologylist:
+                  for boxlengthi in self.boxlength:
+                      foldername = cosmi + \
+                                  '_L' + str(boxlengthi) + \
+                                  '_Z' + str(self.zinit) + \
+                                  '_LMIN' + str(self.boxlevel)
+  
+                      #filepath = self.outpath + 'halos/H' + str(self.haloid) + '/' + foldername
+  
+                      if not os.path.exists(self.outpath + 'parent/'):
+                          os.makedirs(self.outpath + 'parent/')
+  
+                      if not os.path.exists(self.outpath + 'parent/' + foldername):
+                          os.makedirs(self.outpath + 'parent/' + foldername)
+  
+                      writepath = self.outpath + 'parent/' + foldername
+                      confname = self.outpath + 'parent/' + foldername + '/' + foldername + '.conf'
+  
+  
+                      omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
+  
+                      baryonsstr = determineboolstr(self.baryons)
+                      use2LPTstr = determineboolstr(self.use2LPT)
+                      useLLAstr = determineboolstr(self.useLLA)
+                      periodicTFstr = determineboolstr(self.periodicTF)
+                      fftfinestr = determineboolstr(self.fftfine)
+                      alignstr = determineboolstr(self.align)
+                      padding = 8
+                      overlap = 4
+  
+                      constructparentconf(confname,boxlengthi,self.zinit,self.lTF,padding,overlap,self.refx,self.refy,self.refz, \
+                                         self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
+                                         sigma8,nspec,self.tranfunc[0],self.seedinit,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
+                                         self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,self.noutput)
+  
+                      self.confstatus = 'Generated halo configuration files.'
+                      runmusic = self.musicpath + '/MUSIC ' + confname
+                      cding = "cd " + writepath
+                      print "EXECUTING..."
+                      print runmusic
+                      subprocess.call(';'.join([cding, runmusic]), shell=True)
+                      re.getBlocks(writepath)
+  
+          else:
+              for cosmi in self.cosmologylist:
+                  for boxtypei in self.boxtype:
+                      for nrviri in self.nrvir:
+                          for paddingi in self.padding:
+                              for lmini in self.lmin:
+                                  for lmaxi in self.lmax:
+                                    for overlapi in self.overlap:
+                                        foldername = 'H' + str(self.haloidselect) + \
+                                                    '_B' + str(boxtypei.upper())[0] + \
+                                                    '_Z' + str(self.zinit) + \
+                                                    '_P' + str(paddingi) + \
+                                                    '_LN' + str(lmini) + \
+                                                    '_LX' + str(lmaxi) + \
+                                                    '_O' + str(overlapi) + \
+                                                    '_NV' + str(nrviri)
+                                        
+                                        filepath = self.outpath + 'halos/H' + str(self.haloidselect) + '/' + foldername
+  
+                                        if os.path.exists(filepath):
+                                            self.confstatus = 'DIR EXIST!'
+  
+                                        elif not os.path.exists(filepath):
+                                            os.makedirs(filepath)
+  
+                                            pointfile = self.outpath  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
+                                            writepath = filepath 
+                                            #self.outpath + 'halos/' + foldername
+                                            confname = filepath + '/' + foldername + '.conf'
+                                            #self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
+          
+                                            self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
+          
+                                            omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
+      
+                                            baryonsstr = determineboolstr(self.baryons)
+                                            use2LPTstr = determineboolstr(self.use2LPT)
+                                            useLLAstr = determineboolstr(self.useLLA)
+                                            periodicTFstr = determineboolstr(self.periodicTF)
+                                            fftfinestr = determineboolstr(self.fftfine)
+                                            alignstr = determineboolstr(self.align)
+                                            boxlength = 100
+              
+                                            constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.refx,self.refy,self.refz, \
+                                                                   self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
+                                                                   sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
+                                                                   self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
+                                            
+                                            self.confstatus = 'Generated halo configuration files.'
+                                            runmusic = self.musicpath + '/MUSIC ' + confname
+                                            cding = "cd " + writepath
+                                            print "EXECUTING..."
+                                            print runmusic
+                                            subprocess.call(';'.join([cding, runmusic]), shell=True)
+                                            #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
+                                            #runconvert = "python convertics.py"
+                                            #rmconvert = "rm reWriteIC.py convertics.py"
+                                            re.getBlocks(writepath)
+                                            #subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
+      else:
+        self.confstatus = "Please select only IDs from list."
 
     def _masterpath_changed(self):
       self.candidatefiledir = self.main.headertab.datamasterpath

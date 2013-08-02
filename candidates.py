@@ -46,7 +46,7 @@ class Candidates(HasTraits):
     candidatearr = Array
 
     loadpreviouscand = Bool(True)
-
+    
     #candidatearr = random((20, 6))
     haloid = List(Int)
     #haloid = Enum(['190897','208737','140666','28221','147419','28188','147273','78411','131988','19910'])
@@ -327,8 +327,7 @@ class Candidates(HasTraits):
         self.normlargerthan2 = 10**self.largerthan2
         self.normlargerthan3 = 10**self.largerthan3
         #self.largerthan3 = np.log10(7e13)
-
-
+        
         self.writeoutname = 'candidates.dat'
         self.writeoutpath = self.main.headertab.datamasterpath
         self.halopath = self.main.headertab.parentsimpath + 'RockstarData'
