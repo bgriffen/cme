@@ -2,7 +2,20 @@ from Common import *
 import mergertrees.MTCatalogue as MT
 
 class GadgetRun(HasTraits):
+  #clusteropt = List()
   
+  PBSncores = Range(0,64,8)
+  PBSnnodes = Range(0,10,8)
+  PBSuser = Str("bgriffen")
+  PBSemail = Str("bgriffen@space.mit.edu")
+  PBSjobname = Str()
+  PBSqueue = Str("default")
+  PBSoutputfile = Str("OUTPUT")
+  PBSerrorfile = Str("ERROR")
+  PBSextraflags = Str("#PBS -be ")
+  PBSextralines = Str(". /opt/torque/etc/openmpi-setup.sh")
+  PBSexecute = Str()
+  compilegadopt = Bool(False)
   InitCondFile = Str()
   OutputDir = Str()
   EnergyFile = Str()
@@ -74,6 +87,7 @@ class GadgetRun(HasTraits):
   levelmaxuse = Int(12)
   ErrTolThetaSubfind = Float
   DesLinkNgb = Int
+  ExpansionListArr = Array
 
   PMGRID = Int(512)
   ENABLE_SUBFIND = Bool(False)
@@ -92,7 +106,14 @@ class GadgetRun(HasTraits):
   haloid = Int()
   haloidlist = List(Int)
   zinit = Range(0,127,127)
-   
+  redshifti = Float()
+  expfacti = Float()
+  nintervals = Enum(['32','64','128','258','512','1024'])
+  snapshotlist = Str()
+  alloutputopt = Bool(True)
+  PBSstring = Str()
+  vizexpz_button = Button("Inspect/Update List")
+  subscript_button = Button("Create Submission Script")
 
   view = View(Group(Group(Group(
                     Item('gadpath',label='Base Path'),
@@ -155,17 +176,17 @@ class GadgetRun(HasTraits):
               Item('MinGasTemp',label='MinGasTemp'),label='Cosmology & Timestep'),
 
               Group(Item('TypeOfOpeningCriterion',label='TypeOfOpeningCriterion'),
-              Item('ErrTolTheta',label='ErrTolTheta'),
-              Item('ErrTolForceAcc',label='ErrTolForceAcc'),
+              HGroup(Item('ErrTolTheta',label='ErrTolTheta'),
+              Item('ErrTolForceAcc',label='ErrTolForceAcc')),
               Item('TreeDomainUpdateFrequency',label='TreeDomainUpdateFrequency'),
               Item('DesNumNgb',label='DesNumNgb'),
               Item('MaxNumNgbDeviation',label='MaxNumNgbDeviation'),
               Item('UnitLength_in_cm',label='UnitLength_in_cm'),
               Item('UnitMass_in_g',label='UnitMass_in_g'),
               Item('UnitVelocity_in_cm_per_s',label='UnitVelocity_in_cm_per_s'),
-              Item('GravityConstantInternal',label='GravityConstantInternal'),label='Tree & Const.'),
+              Item('GravityConstantInternal',label='GravityConstantInternal'),
               
-              Group(Item('MinGasHsmlFractional',label='MinGasHsmlFractional'),
+              Item('MinGasHsmlFractional',label='MinGasHsmlFractional'),
               Item('SofteningGas',label='SofteningGas'),
               Item('SofteningHalo',label='SofteningHalo'),
               Item('SofteningDisk',label='SofteningDisk'),
@@ -180,11 +201,157 @@ class GadgetRun(HasTraits):
               Item('SofteningBndryMaxPhys',label='SofteningBndryMaxPhys'),
               Item('ArtBulkViscConst' ,label='ArtBulkViscConst '),label='Softening'),
 
+              Group(HGroup(Item('redshifti',label='Starting Output Redshift'),Item('expfacti',label='Expansion Factor')),
+                    Item('nintervals',label='Number Of Outputs',style='custom'),
+                    HGroup(Item('alloutputopt',label='Output Every Snapshot?'),Group(Item('snapshotlist',label='Only Specific Snapshots (csv)',springy=True),springy=True,enabled_when='alloutputopt == False')),
+                    Group(Item('vizexpz_button',show_label=False),enabled_when='haloid in haloidlist'),
+                    Heading('ExpansionList Output (last two columns)'),
+                    Item('ExpansionListArr',show_label = False,
+                                       editor= ArrayViewEditor(titles = [ 'snapshot','redshift','exp. fact.', ' I/O' ],
+                                                                    format = '%2.5e',
+                                                                    show_index = False
+                                                                   )),label='Exp.'),
+
               Group(HGroup(Item('PMGRID',label='PMGRID'),
                     Item('ENABLE_SUBFIND',label='Subfind'),
                     Group(Item('FOF_SECONDARY_LINK_TYPES',label='FOF_SECONDARY_LINK_TYPES'),enabled_when='ENABLE_SUBFIND==True',springy=True)),
-                    Item('createconfig_button',show_label=False),label='Write'))
+                    Group(Item('createconfig_button',show_label=False),enabled_when='haloid in haloidlist'),
+                    Item('_'),
+                    Group(Item('clusteropt',label='Cluster',style='readonly'),
+                    Item('PBSncores',label='# Cores'),
+                    Item('PBSnnodes',label='# Nodes'),
+                    Item('PBSuser',label='Username'),
+                    Item('PBSemail',label='Email'),
+                    #Item('PBSjobname',label='Job Name'),
+                    Item('PBSqueue',label='Queue'),
+                    Item('PBSoutputfile',label='Output File'),
+                    Item('PBSerrorfile',label='Error File'),
+                    Item('PBSextraflags',label='Extra Flag'),
+                    Item('PBSextralines',label='Extra Lines'),
+                    Item('PBSexecute',label='Execute Line')),
+                    HGroup(Item('compilegadopt',label='Compile Gadget?'),Item('subscript_button',show_label=False)),
+                    label='Write & Submit Job')
+              )
+
+  def _subscript_button_fired(self):
+    for boxtypei in self.boxtype:
+          for nrviri in self.nrvir:
+              for paddingi in self.padding:
+                  for lmini in self.lmin:
+                      for lmaxi in self.lmax:
+                          for overlapi in self.overlap:
+                              foldername = 'H' + str(self.haloid) + \
+                                          '_B' + str(boxtypei.upper())[0] + \
+                                          '_Z' + str(self.zinit) + \
+                                          '_P' + str(paddingi) + \
+                                          '_LN' + str(lmini) + \
+                                          '_LX' + str(lmaxi) + \
+                                          '_O' + str(overlapi) + \
+                                          '_NV' + str(nrviri)
+
+                              jobname = 'H' + str(self.haloid)[0:2] + \
+                                        str(boxtypei.upper())[0] + \
+                                        'P' + str(paddingi) + \
+                                        'L' + str(lmaxi) + \
+                                        'N' + str(nrviri)
+
+                              filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+
+                              f = open(filepath + "/runscript",'w')
+                              f.write("#!/bin/sh" + "\n")
+                              f.write("#PBS -l nodes=" + str(self.PBSnnodes) + ":ppn=" + str(self.PBSncores) + "\n")
+                              f.write("#PBS -N " + jobname + "\n")
+                              f.write("#PBS -u " + self.PBSuser + "\n")
+                              f.write("#PBS -q " + self.PBSqueue + "\n")
+                              f.write(self.PBSextraflags + "\n")
+                              f.write("\n")
+                              f.write(self.PBSextralines + "\n")
+                              f.write("\n")
+                              f.write(self.PBSexecute)
+      
+                              f.close()
+
+                              if compilegadopt == True:
+                                #CONSTRUCT CONFIG FILE & RUN GADGET COMPILER
+                                pass
+
+  def _PBSncores_changed(self):
+      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+
+  def _PBSnnodes_changed(self):
+      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+
+  def _PBSoutputfile_changed(self):
+      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+
+  def _PBSoutputfile_changed(self):
+      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+
+  def _vizexpz_button_fired(self):
+      figure = self.main.display
+      figure.clear()
+      ax = figure.add_subplot(111)
+      ax = self.main.display.axes[0]
+
+      snapshots = range(0,int(self.nintervals))
+      expfact = np.linspace(self.expfacti,1,int(self.nintervals))
+
+      ax.set_xlabel('Snapshot')
+      ax.set_ylabel('Expansion Factor')
+      redall = np.float64(1./expfact - 1)
     
+      if self.alloutputopt == True:
+          self.ExpansionListArr = np.zeros(shape=(len(snapshots),4))
+          self.ExpansionListArr[:,0] = snapshots
+          self.ExpansionListArr[:,1] = redall
+          self.ExpansionListArr[:,2] = expfact
+          self.ExpansionListArr[:,3] = np.array(len(expfact)*[1])
+          self.display_points = ax.plot(snapshots,expfact,'bo')
+
+      else:
+          listin = str(self.snapshotlist)
+          snapshotin = np.array(listin.split(','))
+          listcomp = np.array(self.ExpansionListArr[:,0])
+          self.ExpansionListArr[:,3] = np.array(len(expfact)*[0])
+          for i in xrange(0,len(listcomp)):
+              for j in xrange(0,len(snapshotin)):
+                  if int(listcomp[i]) ==  int(snapshotin[j]):
+                      self.ExpansionListArr[i,3] = 1
+
+      self.display_points = ax.plot(snapshots,expfact,'b-')
+      wx.CallAfter(self.main.display.canvas.draw)
+
+    #      listin = str(self.specificredshift)
+    #      redshiftlist =listin.split(',')
+    #      io1 = []
+    #      io2 = []
+    #      io3 = []
+    #      io4 = []
+    #      for redshift in redshiftlist:
+    #          redshift = float(redshift)
+    #          exptmp = np.float64(1./(1+redshift))
+    #          foundexp = min(range(len(expfact)), key=lambda i: abs(np.float64(expfact[i])-exptmp))
+    #          ax.plot(snapshots[foundexp],expfact[foundexp],'bo')
+    #          io1.append(snapshots[foundexp])
+    #          io2.append(float(redshift))
+    #          io3.append(expfact[foundexp])
+    #          io4.append(1)
+
+          #self.ExpansionListArr = []
+     #     self.ExpansionListArr = np.zeros(shape=(len(io1),4))
+     #     self.ExpansionListArr[:,0] = io1
+     #     self.ExpansionListArr[:,1] = io2
+     #     self.ExpansionListArr[:,2] = io3
+     #     self.ExpansionListArr[:,3] = io4
+
+      
+
+  def _expfacti_changed(self):
+    self.redshifti = 1./self.expfacti - 1
+
+  def _redshifti_changed(self):
+    self.expfacti = 1./(1 + self.redshifti)
+
   def _BoxSize_changed(self):
       self.SofteningGas = 0.0
       self.SofteningHalo = self.BoxSize/2**float(self.levelmaxuse)/40.
@@ -213,15 +380,125 @@ class GadgetRun(HasTraits):
       self.SofteningStarsMaxPhys = 2*self.SofteningBulgeMaxPhys 
       self.SofteningBndryMaxPhys = 2*self.SofteningStarsMaxPhys 
 
-  def _createconfig_button_fired(self):
-      #filename = 'Config.sh'
-      #determinewrite()
-      #f2=open(filename,'w')
-      #f2.close()
-      #for iv in xrange(0,len(lagrPos[:,0])):
-      #    f2.write(str(lagrPos[iv,0]/header.boxsize)+' '+str(lagrPos[iv,1]/header.boxsize)+' '+ str(lagrPos[iv,2]/header.boxsize)+'\n')                
-      #f2.close()
+  def makeparam(self,filename,ext,includesub):
+      snapshots = range(0,int(self.nintervals))
+      expfact = np.linspace(self.expfacti,1,int(self.nintervals))
+      expfilename = ext + '/' + self.OutputListFilename
+      f = open(expfilename,'w')
 
+      for i in xrange(0,len(self.ExpansionListArr[:,0])):  
+          f.write(str(np.float64(self.ExpansionListArr[i,2])) + ' ' + str(int(self.ExpansionListArr[i,3])) + '\n')
+      
+      f.close()
+
+      f = open(filename,'w')
+      f.write('%----  Relevant files' + '\n')
+      f.write('InitCondFile               ' + str(self.InitCondFile) + '\n')
+      f.write('OutputDir                  ' + str(self.OutputDir) + '\n')
+      f.write('EnergyFile                 ' + str(self.EnergyFile) + '\n')
+      f.write('InfoFile                   ' + str(self.InfoFile) + '\n')
+      f.write('TimingsFile                ' + str(self.TimingsFile) + '\n')
+      f.write('CpuFile                    ' + str(self.CpuFile) + '\n')
+      f.write('RestartFile                ' + str(self.RestartFile) + '\n')
+      f.write('SnapshotFileBase           ' + str(self.SnapshotFileBase) + '\n')
+      f.write('OutputListFilename         ' + str(self.OutputListFilename) + '\n')
+      f.write('TimebinFile                ' + str(self.TimebinFile) + '\n')
+      f.write('\n')
+      f.write('%---- File formats' + '\n')
+      f.write('ICFormat                   ' + str(self.ICFormat) + '\n')
+      f.write('SnapFormat                 ' + str(self.SnapFormat) + '\n')
+      f.write('\n')
+      f.write('%---- CPU-time limits' + '\n')
+      f.write('TimeLimitCPU               ' + str(self.TimeLimitCPU) + '\n')
+      f.write('CpuTimeBetRestartFile      ' + str(self.CpuTimeBetRestartFile) + '\n')
+      f.write('ResubmitOn                 ' + str(self.ResubmitOn) + '\n')
+      f.write('ResubmitCommand            ' + str(self.ResubmitCommand) + '\n')
+      f.write('\n')
+      f.write('%----- Memory alloction' + '\n')
+      f.write('MaxMemSize                 ' + str(self.MaxMemSize) + '\n')
+      f.write('PartAllocFactor            ' + str(self.PartAllocFactor) + '\n')
+      f.write('BufferSize                 ' + str(self.BufferSize) + '\n')
+      f.write('\n')
+      f.write('%---- Caracteristics of run' + '\n')                                  
+      f.write('TimeBegin                  ' + str(self.TimeBegin) + '\n')
+      f.write('TimeMax                    ' + str(self.TimeMax) + '\n')
+      f.write('\n')
+      f.write('%---- Basic code options that set the type of simulation' + '\n')
+      f.write('ComovingIntegrationOn      ' + str(self.ComovingIntegrationOn) + '\n')
+      f.write('PeriodicBoundariesOn       ' + str(self.PeriodicBoundariesOn) + '\n')
+      f.write('CoolingOn                  ' + str(self.CoolingOn) + '\n')
+      f.write('StarformationOn            ' + str(self.StarformationOn) + '\n')
+      f.write('\n')
+      f.write('%---- Cosmological parameters' + '\n')                                  
+      f.write('Omega0                     ' + str(self.Omega0) + '\n')
+      f.write('OmegaLambda                ' + str(self.OmegaLambda) + '\n')
+      f.write('OmegaBaryon                ' + str(self.OmegaBaryon) + '\n')
+      f.write('HubbleParam                ' + str(self.HubbleParam/100) + '\n')
+      f.write('BoxSize                    ' + str(self.BoxSize) + '\n')
+      f.write('\n')
+      f.write('%---- Tree algorithm, force accuracy, domain update frequency' + '\n')
+      f.write('OutputListOn               ' + str(self.OutputListOn) + '\n')
+      f.write('TimeBetSnapshot            ' + str(self.TimeBetSnapshot) + '\n')
+      f.write('TimeOfFirstSnapshot        ' + str(self.TimeOfFirstSnapshot) + '\n')
+      f.write('TimeBetStatistics          ' + str(self.TimeBetStatistics) + '\n')
+      f.write('NumFilesPerSnapshot        ' + str(self.NumFilesPerSnapshot) + '\n')
+      f.write('NumFilesWrittenInParallel  ' + str(self.NumFilesWrittenInParallel) + '\n')
+      f.write('\n')
+      f.write('%---- Accuracy of time integration' + '\n')
+      f.write('TypeOfTimestepCriterion    ' + str(self.TypeOfTimestepCriterion) + '\n')
+      f.write('ErrTolIntAccuracy          ' + str(self.ErrTolIntAccuracy) + '\n')
+      f.write('CourantFac                 ' + str(self.CourantFac) + '\n')
+      f.write('MaxRMSDisplacementFac      ' + str(self.MaxRMSDisplacementFac) + '\n')
+      f.write('MaxSizeTimestep            ' + str(self.MaxSizeTimestep) + '\n')
+      f.write('MinSizeTimestep            ' + str(self.MinSizeTimestep) + '\n')
+      f.write('\n')
+      #f.write('%---- Accuracy of time integration')
+      f.write('InitGasTemp                ' + str(self.InitGasTemp) + '\n')
+      f.write('MinGasTemp                 ' + str(self.MinGasTemp) + '\n')
+      f.write('\n')
+      f.write('%---- Tree algorithm, force accuracy, domain update frequency' + '\n')
+      f.write('TypeOfOpeningCriterion     ' + str(self.TypeOfOpeningCriterion) + '\n')
+      f.write('ErrTolTheta                ' + str(self.ErrTolTheta) + '\n')
+      f.write('ErrTolForceAcc             ' + str(self.ErrTolForceAcc) + '\n')
+      f.write('TreeDomainUpdateFrequency  ' + str(self.TreeDomainUpdateFrequency) + '\n')
+      f.write('\n')
+      f.write('%---- Initial density estimate' + '\n')
+      f.write('DesNumNgb                  ' + str(self.DesNumNgb) + '\n')
+      f.write('MaxNumNgbDeviation         ' + str(self.MaxNumNgbDeviation) + '\n')
+      f.write('\n')
+      f.write('%---- System of units' + '\n')
+      f.write('UnitLength_in_cm           ' + str(self.UnitLength_in_cm) + '\n')
+      f.write('UnitMass_in_g              ' + str(self.UnitMass_in_g) + '\n')
+      f.write('UnitVelocity_in_cm_per_s   ' + str(self.UnitVelocity_in_cm_per_s) + '\n')
+      f.write('GravityConstantInternal    ' + str(self.GravityConstantInternal) + '\n')
+      f.write('\n')
+      f.write('%---- Gravitational softening lengths' + '\n')
+      f.write('MinGasHsmlFractional       ' + str(self.MinGasHsmlFractional) + '\n')
+      f.write('\n')
+      f.write('SofteningGas               ' + str(self.SofteningGas) + '\n')
+      f.write('SofteningHalo              ' + str(self.SofteningHalo) + '\n')
+      f.write('SofteningDisk              ' + str(self.SofteningDisk) + '\n')
+      f.write('SofteningBulge             ' + str(self.SofteningBulge) + '\n')
+      f.write('SofteningStars             ' + str(self.SofteningStars) + '\n')
+      f.write('SofteningBndry             ' + str(self.SofteningBndry) + '\n')
+      f.write('\n')
+      f.write('SofteningGasMaxPhys        ' + str(self.SofteningGasMaxPhys) + '\n')
+      f.write('SofteningHaloMaxPhys       ' + str(self.SofteningHaloMaxPhys) + '\n')
+      f.write('SofteningDiskMaxPhys       ' + str(self.SofteningDiskMaxPhys) + '\n')
+      f.write('SofteningBulgeMaxPhys      ' + str(self.SofteningBulgeMaxPhys) + '\n')
+      f.write('SofteningStarsMaxPhys      ' + str(self.SofteningStarsMaxPhys) + '\n')
+      f.write('SofteningBndryMaxPhys      ' + str(self.SofteningBndryMaxPhys) + '\n')
+      f.write('\n')
+      f.write('%---- non-common' + '\n')
+      f.write('ArtBulkViscConst           ' + str(self.ArtBulkViscConst) + '\n')
+                                    
+      if includesub == True:
+          f.write('ErrTolThetaSubfind         ' + str(self.ErrTolThetaSubfind) + '\n')
+          f.write('DesLinkNgb                 ' + str(self.DesLinkNgb) + '\n')
+                                    
+      f.close()
+
+  def _createconfig_button_fired(self):
       for cosmi in self.cosmologylist:
           for boxtypei in self.boxtype:
               for nrviri in self.nrvir:
@@ -239,125 +516,37 @@ class GadgetRun(HasTraits):
                                               '_NV' + str(nrviri)
                                   
                                   filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
-                                  
+                                 
                                   if not os.path.exists(filepath):
                                       print "PATH NOT FOUND:",filepath
                                   else:
                                       print "PATH FOUND:",filepath
 
-                                  self.levelmaxuse = int(lmaxi)
-                                  #self.HubbleParam = 0.6711
-                                  self.Omega0,self.OmegaLambda,self.OmegaBaryon,self.HubbleParam,sigma8,nspec = cosmoconstant(cosmi)
-
-                                  filename = 'paramtest.txt'
-                                  f = open(filename,'w')
-                                  f.write('%----  Relevant files' + '\n')
-                                  f.write('InitCondFile               ' + str(self.InitCondFile) + '\n')
-                                  f.write('OutputDir                  ' + str(self.OutputDir) + '\n')
-                                  f.write('EnergyFile                 ' + str(self.EnergyFile) + '\n')
-                                  f.write('InfoFile                   ' + str(self.InfoFile) + '\n')
-                                  f.write('TimingsFile                ' + str(self.TimingsFile) + '\n')
-                                  f.write('CpuFile                    ' + str(self.CpuFile) + '\n')
-                                  f.write('RestartFile                ' + str(self.RestartFile) + '\n')
-                                  f.write('SnapshotFileBase           ' + str(self.SnapshotFileBase) + '\n')
-                                  f.write('OutputListFilename         ' + str(self.OutputListFilename) + '\n')
-                                  f.write('TimebinFile                ' + str(self.TimebinFile) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- File formats' + '\n')
-                                  f.write('ICFormat                   ' + str(self.ICFormat) + '\n')
-                                  f.write('SnapFormat                 ' + str(self.SnapFormat) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- CPU-time limits' + '\n')
-                                  f.write('TimeLimitCPU               ' + str(self.TimeLimitCPU) + '\n')
-                                  f.write('CpuTimeBetRestartFile      ' + str(self.CpuTimeBetRestartFile) + '\n')
-                                  f.write('ResubmitOn                 ' + str(self.ResubmitOn) + '\n')
-                                  f.write('ResubmitCommand            ' + str(self.ResubmitCommand) + '\n')
-                                  f.write('\n')
-                                  f.write('%----- Memory alloction' + '\n')
-                                  f.write('MaxMemSize                 ' + str(self.MaxMemSize) + '\n')
-                                  f.write('PartAllocFactor            ' + str(self.PartAllocFactor) + '\n')
-                                  f.write('BufferSize                 ' + str(self.BufferSize) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Caracteristics of run' + '\n')                                  
-                                  f.write('TimeBegin                  ' + str(self.TimeBegin) + '\n')
-                                  f.write('TimeMax                    ' + str(self.TimeMax) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Basic code options that set the type of simulation' + '\n')
-                                  f.write('ComovingIntegrationOn      ' + str(self.ComovingIntegrationOn) + '\n')
-                                  f.write('PeriodicBoundariesOn       ' + str(self.PeriodicBoundariesOn) + '\n')
-                                  f.write('CoolingOn                  ' + str(self.CoolingOn) + '\n')
-                                  f.write('StarformationOn            ' + str(self.StarformationOn) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Cosmological parameters' + '\n')                                  
-                                  f.write('Omega0                     ' + str(self.Omega0) + '\n')
-                                  f.write('OmegaLambda                ' + str(self.OmegaLambda) + '\n')
-                                  f.write('OmegaBaryon                ' + str(self.OmegaBaryon) + '\n')
-                                  f.write('HubbleParam                ' + str(self.HubbleParam/100) + '\n')
-                                  f.write('BoxSize                    ' + str(self.BoxSize) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Tree algorithm, force accuracy, domain update frequency' + '\n')
-                                  f.write('OutputListOn               ' + str(self.OutputListOn) + '\n')
-                                  f.write('TimeBetSnapshot            ' + str(self.TimeBetSnapshot) + '\n')
-                                  f.write('TimeOfFirstSnapshot        ' + str(self.TimeOfFirstSnapshot) + '\n')
-                                  f.write('TimeBetStatistics          ' + str(self.TimeBetStatistics) + '\n')
-                                  f.write('NumFilesPerSnapshot        ' + str(self.NumFilesPerSnapshot) + '\n')
-                                  f.write('NumFilesWrittenInParallel  ' + str(self.NumFilesWrittenInParallel) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Accuracy of time integration' + '\n')
-                                  f.write('TypeOfTimestepCriterion    ' + str(self.TypeOfTimestepCriterion) + '\n')
-                                  f.write('ErrTolIntAccuracy          ' + str(self.ErrTolIntAccuracy) + '\n')
-                                  f.write('CourantFac                 ' + str(self.CourantFac) + '\n')
-                                  f.write('MaxRMSDisplacementFac      ' + str(self.MaxRMSDisplacementFac) + '\n')
-                                  f.write('MaxSizeTimestep            ' + str(self.MaxSizeTimestep) + '\n')
-                                  f.write('MinSizeTimestep            ' + str(self.MinSizeTimestep) + '\n')
-                                  f.write('\n')
-                                  #f.write('%---- Accuracy of time integration')
-                                  f.write('InitGasTemp                ' + str(self.InitGasTemp) + '\n')
-                                  f.write('MinGasTemp                 ' + str(self.MinGasTemp) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Tree algorithm, force accuracy, domain update frequency' + '\n')
-                                  f.write('TypeOfOpeningCriterion     ' + str(self.TypeOfOpeningCriterion) + '\n')
-                                  f.write('ErrTolTheta                ' + str(self.ErrTolTheta) + '\n')
-                                  f.write('ErrTolForceAcc             ' + str(self.ErrTolForceAcc) + '\n')
-                                  f.write('TreeDomainUpdateFrequency  ' + str(self.TreeDomainUpdateFrequency) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Initial density estimate' + '\n')
-                                  f.write('DesNumNgb                  ' + str(self.DesNumNgb) + '\n')
-                                  f.write('MaxNumNgbDeviation         ' + str(self.MaxNumNgbDeviation) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- System of units' + '\n')
-                                  f.write('UnitLength_in_cm           ' + str(self.UnitLength_in_cm) + '\n')
-                                  f.write('UnitMass_in_g              ' + str(self.UnitMass_in_g) + '\n')
-                                  f.write('UnitVelocity_in_cm_per_s   ' + str(self.UnitVelocity_in_cm_per_s) + '\n')
-                                  f.write('GravityConstantInternal    ' + str(self.GravityConstantInternal) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- Gravitational softening lengths' + '\n')
-                                  f.write('MinGasHsmlFractional       ' + str(self.MinGasHsmlFractional) + '\n')
-                                  f.write('\n')
-                                  f.write('SofteningGas               ' + str(self.SofteningGas) + '\n')
-                                  f.write('SofteningHalo              ' + str(self.SofteningHalo) + '\n')
-                                  f.write('SofteningDisk              ' + str(self.SofteningDisk) + '\n')
-                                  f.write('SofteningBulge             ' + str(self.SofteningBulge) + '\n')
-                                  f.write('SofteningStars             ' + str(self.SofteningStars) + '\n')
-                                  f.write('SofteningBndry             ' + str(self.SofteningBndry) + '\n')
-                                  f.write('\n')
-                                  f.write('SofteningGasMaxPhys        ' + str(self.SofteningGasMaxPhys) + '\n')
-                                  f.write('SofteningHaloMaxPhys       ' + str(self.SofteningHaloMaxPhys) + '\n')
-                                  f.write('SofteningDiskMaxPhys       ' + str(self.SofteningDiskMaxPhys) + '\n')
-                                  f.write('SofteningBulgeMaxPhys      ' + str(self.SofteningBulgeMaxPhys) + '\n')
-                                  f.write('SofteningStarsMaxPhys      ' + str(self.SofteningStarsMaxPhys) + '\n')
-                                  f.write('SofteningBndryMaxPhys      ' + str(self.SofteningBndryMaxPhys) + '\n')
-                                  f.write('\n')
-                                  f.write('%---- non-common' + '\n')
-                                  f.write('ArtBulkViscConst           ' + str(self.ArtBulkViscConst) + '\n')
-                                  f.write('ErrTolThetaSubfind         ' + str(self.ErrTolThetaSubfind) + '\n')
-                                  f.write('DesLinkNgb                 ' + str(self.DesLinkNgb) + '\n')
-                                  f.close()
-
-                                  mving = "mv paramtest.txt " + filepath
-                                  print "Moving..."
-                                  print mving
-                                  subprocess.call([mving], shell=True)
+                                      self.levelmaxuse = int(lmaxi)
+                                      #self.HubbleParam = 0.6711
+                                      self.Omega0,self.OmegaLambda,self.OmegaBaryon,self.HubbleParam,sigma8,nspec = cosmoconstant(cosmi)
+                                      #makeparam('param.txt',ENABLE_SUBFIND)
+                                      ext = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+                                      if self.ENABLE_SUBFIND == True:
+                                          self.makeparam('param.txt',ext,includesub=False)
+                                          self.makeparam('param_sub.txt',ext,includesub=True)
+                                          mving = "mv param.txt " + filepath
+                                          print "Moving..."
+                                          print mving
+                                          subprocess.call([mving], shell=True)
+                                          mving = "mv param_sub.txt " + filepath
+                                          print "Moving..."
+                                          print mving
+                                          subprocess.call([mving], shell=True)
+                                      else:
+                                          self.makeparam('param.txt',ext,includesub=False)
+                                          mving = "mv param.txt " + filepath
+                                          print "Moving..."
+                                          print mving
+                                          subprocess.call([mving], shell=True)
+                                      
+                                      mkdirs = "mkdir -p outputs"
+                                      subprocess.call([mkdirs], shell=True)
 
   def _checkexistence_button_fired(self):
 
@@ -432,19 +621,6 @@ class GadgetRun(HasTraits):
                             
       wx.CallAfter(self.main.display.canvas.draw)                                
 
-                                #f2=open(filename,'w')
-                                #for iv in xrange(0,len(lagrPos[:,0])):
-                                #    f2.write(str(lagrPos[iv,0]/header.boxsize)+' '+str(lagrPos[iv,1]/header.boxsize)+' '+ str(lagrPos[iv,2]/header.boxsize)+'\n')                
-                                #f2.close()
-                                        
-          
-                                        #pointfile = self.outpath  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
-                                        #writepath = self.outpath + 'halos/' + foldername
-                                        #confname = self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
-      
-     # f.open('Config.sh','w')
-
-
   def __init__(self, main, **kwargs):
       HasTraits.__init__(self)
       self.main = main
@@ -455,7 +631,9 @@ class GadgetRun(HasTraits):
       self.cosmologylist = ['PLANCK']
       self.haloidlist = self.main.candidatestab.haloid
       self.gadpath = self.main.headertab.datamasterpath
-
+      self.nintervals = '64'
+      self.redshifti = 46.
+      self.expfacti = 1./(1.+self.redshifti)
       self.InitCondFile =        './ics_rewrite'
       self.OutputDir =           './outputs'
       self.EnergyFile =          'energy.txt'
@@ -464,7 +642,7 @@ class GadgetRun(HasTraits):
       self.CpuFile =             'cpu.txt'
       self.RestartFile =         'restart'
       self.SnapshotFileBase =    'snap'
-      self.OutputListFilename =  'ExpansionList_64'
+      self.OutputListFilename =  'ExpansionList'
       self.TimebinFile =         'timebin'
       self.ICFormat =           1
       self.SnapFormat =         1
@@ -527,4 +705,13 @@ class GadgetRun(HasTraits):
       self.ErrTolThetaSubfind = 0.7
       self.DesLinkNgb = 20
       self.FOF_SECONDARY_LINK_TYPES = '4+8+16+32'
-    
+      self.ExpansionListArr = np.zeros(shape=(1,4))
+      self.clusteropt = self.main.headertab.clusteropt
+      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+
+
+      #self.PBSstring = \
+      #"#!/bin/sh \n#PBS -l nodes=3:ppn=8 \n#PBS -N H190897LX9N1 \n#PBS -m be \n. /opt/torque/etc/openmpi-setup.sh \ncd /spacebase/data/AnnaGroup/caterpillar/halos/H190897/H190897_BE_Z127_P7_LN7_LX9_O4_NV1 \nmpirun -np 24 ./P-Gadget3 ./param.txt 1>OUTPUT 2>ERROR"
+
+
+   
