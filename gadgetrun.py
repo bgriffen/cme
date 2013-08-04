@@ -215,7 +215,6 @@ class GadgetRun(HasTraits):
               Group(HGroup(Item('PMGRID',label='PMGRID'),
                     Item('ENABLE_SUBFIND',label='Subfind'),
                     Group(Item('FOF_SECONDARY_LINK_TYPES',label='FOF_SECONDARY_LINK_TYPES'),enabled_when='ENABLE_SUBFIND==True',springy=True)),
-                    Group(Item('createconfig_button',show_label=False),enabled_when='haloid in haloidlist'),
                     Item('_'),
                     Group(Item('clusteropt',label='Cluster',style='readonly'),
                     Item('PBSncores',label='# Cores'),
@@ -257,6 +256,28 @@ class GadgetRun(HasTraits):
 
                               filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
 
+                              if not os.path.exists(filepath):
+                                  print "PATH NOT FOUND:",filepath
+                              else:
+                                  print "PATH FOUND:",filepath
+
+                                  self.levelmaxuse = int(lmaxi)
+                                  self.Omega0,self.OmegaLambda,self.OmegaBaryon,self.HubbleParam,sigma8,nspec = cosmoconstant(self.cosmologylist[0])
+                                  ext = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+                                  if self.ENABLE_SUBFIND == True:
+                                      self.makeparam('param.txt',ext,includesub=False)
+                                      self.makeparam('param_sub.txt',ext,includesub=True)
+                                      mving1 = "mv param.txt " + filepath
+                                      mving2 = "mv param_sub.txt " + filepath
+                                      subprocess.call(';'.join([mving1,mving2]), shell=True)
+                                  else:
+                                      self.makeparam('param.txt',ext,includesub=False)
+                                      mving = "mv param.txt " + filepath
+                                      subprocess.call([mving], shell=True)
+                                      
+                                  mkdirs = "mkdir -p " + filepath +  "/outputs"
+                                  subprocess.call([mkdirs], shell=True)
+
                               f = open(filepath + "/runscript",'w')
                               f.write("#!/bin/sh" + "\n")
                               f.write("#PBS -l nodes=" + str(self.PBSnnodes) + ":ppn=" + str(self.PBSncores) + "\n")
@@ -267,26 +288,89 @@ class GadgetRun(HasTraits):
                               f.write("\n")
                               f.write(self.PBSextralines + "\n")
                               f.write("\n")
+                              f.write("cd " + filepath + "\n")
+                              f.write("\n")
                               f.write(self.PBSexecute)
       
                               f.close()
 
-                              if compilegadopt == True:
-                                #CONSTRUCT CONFIG FILE & RUN GADGET COMPILER
-                                pass
+                              if self.compilegadopt == True:
+                                  #command1 = "cd /spacebase/data/bgriffen/lib/P-Gadget3"
+                                  #command2 = "make clean"
+                                  #command3 = "make"
+                                  if self.ENABLE_SUBFIND == True:
+                                      #command4 = "cp P-Gadget3 " + filepath + "/P-Gadget3_sub"
+                                      self.constructconfigsh(filepath + "/Config_sub.sh")
+                                      command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                                      command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config_sub.sh"
+                                      command7 = "cp " + filepath + "/Config_sub.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
+                                      subprocess.call(';'.join([command5,command6,command7]), shell=True)
+                                  else:
+                                      #command4 = "cp P-Gadget3 " + filepath
+                                      self.constructconfigsh(filepath + "/Config.sh")
+                                      command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                                      command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config.sh"
+                                      command7 = "cp " + filepath + "/Config.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
+                                      subprocess.call(';'.join([command5,command6,command7]), shell=True)
 
+                                  rmconfig = filepath + "/bottomConfig"
+                                  subprocess.call([rmconfig], shell=True)
+
+                                  #subprocess.call(';'.join([command1,command2,command3,command4]), shell=True)
+                                  
+                                  f = open(filepath + "/rungadget.sh",'w')
+                                  f.write("#!/bin/bash \n")
+                                  f.write("ssh antares <<'ENDSSH' \n")
+                                  f.write("cd /spacebase/data/bgriffen/lib/P-Gadget3\n")
+                                  f.write("make clean\n")
+                                  f.write("make\n")
+
+                                  if self.ENABLE_SUBFIND == True:
+                                      f.write("cp P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
+                                  else:
+                                      f.write("cp P-Gadget3 " + filepath + "/P-Gadget3\n")
+
+                                  f.write("cd " + filepath + "\n")
+                                  f.write("qsub runscript \n")
+                                  f.write("logout \n")
+                                  f.close()
+                                  command = "bash " + str(filepath) + "/rungadget.sh"
+                                  subprocess.call(';'.join([command]), shell=True)
+                                  command = "rm " + str(filepath) + "/rungadget.sh"
+                                  subprocess.call(';'.join([command]), shell=True)
+
+    print "SUBMITTED JOBS - BACK AT SPACEBASE!"
+
+  def _ENABLE_SUBFIND_changed(self):
+      if self.ENABLE_SUBFIND == True:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+      else:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+       
   def _PBSncores_changed(self):
-      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-
+      if self.ENABLE_SUBFIND == True:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+      else:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param_sub.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+       
   def _PBSnnodes_changed(self):
-      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-
+      if self.ENABLE_SUBFIND == True:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+      else:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+       
   def _PBSoutputfile_changed(self):
-      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-
+      if self.ENABLE_SUBFIND == True:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+      else:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+       
   def _PBSoutputfile_changed(self):
-      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-
+      if self.ENABLE_SUBFIND == True:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+      else:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+       
   def _vizexpz_button_fired(self):
       figure = self.main.display
       figure.clear()
@@ -379,6 +463,103 @@ class GadgetRun(HasTraits):
       self.SofteningBulgeMaxPhys = 2*self.SofteningDiskMaxPhys 
       self.SofteningStarsMaxPhys = 2*self.SofteningBulgeMaxPhys 
       self.SofteningBndryMaxPhys = 2*self.SofteningStarsMaxPhys 
+
+  def constructconfigsh(self,filename):
+    f = open(filename,'w')
+    f.write("#!/bin/bash\n")
+    f.write("##################################################\n")
+    f.write("#  Enable/Disable compile-time options as needed #\n")
+    f.write("##################################################\n")
+    f.write("#--------------------------------------- Basic operation mode of code\n")
+    f.write("PERIODIC\n")
+    f.write("#COOLING\n")
+    f.write("#SFR\n")
+    f.write("#SINKS\n")
+    f.write("UNEQUALSOFTENINGS\n")
+    f.write("#NUM_THREADS=4              # Now OpenMP works the same, so don't compile with OpenMP *and* PTHREADS !\n")
+    f.write("#--------------------------------------- Kernel Options\n")
+    f.write("#QUINTIC_KERNEL             # Implementation of the Morris 1996 quintic spline kernel, requires (3/2)^3 more neighbours !\n")
+    f.write("#TWODIMS                    # Switch for 2D test problems\n")
+    f.write("#ONEDIM                     # Switch for 1D test problems\n")
+    f.write("#--------------------------------------- TreePM Options\n")
+    f.write("PMGRID=" + str(self.PMGRID) + "\n")
+    f.write("GRIDBOOST=2\n")
+    f.write("##ASMTH=1.25\n")
+    f.write("#RCUT=5.25\n")
+    f.write("PLACEHIGHRESREGION=2\n")
+    f.write("ENLARGEREGION=1.2\n")
+    f.write("#--------------------------------------- Multi-Domain and Top-Level Tree options\n")
+    f.write("MULTIPLEDOMAINS=8\n")
+    f.write("#TOPNODEFACTOR=3.0\n")
+    f.write("#KD_HMAX_ESTIMATE           # Alternative way to update HMAX within Tree nodes\n")
+    f.write("#--------------------------------------- Things that are always recommended\n")
+    f.write("PEANOHILBERT\n")
+    f.write("WALLCLOCK\n")
+    f.write("MYSORT\n")
+    f.write("#AUTO_SWAP_ENDIAN_READIC        # Enables automatic ENDIAN swapping for reading ICs\n")
+    f.write("#WRITE_KEY_FILES                # Enables writing key index files\n")
+    f.write("#WRITE_INFO_BLOCK               # Enables writing the INFO block\n")
+    f.write("#PERMUTATAION_OPTIMIZATION\n")
+    f.write("#PROCESS_TIMES_OF_OUTPUTLIST    # Chooses the outputtime closest to any global step\n")
+    f.write("#SYNCRONIZ_OUTPUT               # Writes output only at global time steps\n")
+    f.write("#---------------------------------------- Single/Double Precision\n")
+    f.write("DOUBLEPRECISION\n")
+    f.write("DOUBLEPRECISION_FFTW\n")
+    f.write("#OUTPUT_IN_DOUBLEPRECISION # snapshot files will be written in double precision\n")
+    f.write("#INPUT_IN_DOUBLEPRECISION\n")
+    f.write("#---------------------------------------- Invariance Test\n")
+    f.write("#INVARIANCETEST\n")
+    f.write("#INVARIANCETEST_SIZE1=2\n")
+    f.write("#INVARIANCETEST_SIZE2=6\n")
+    f.write("#FLTROUNDOFFREDUCTION      # enables (expensive!) `double-double' round-off reduction in particle sums\n")
+    f.write("#SOFTDOUBLEDOUBLE          # needs to be set if a C++ software implementation of 128bit double-double precision should be used\n")
+    f.write("#---------------------------------------- On the fly FOF groupfinder\n")
+
+    if self.ENABLE_SUBFIND == True:
+        f.write("FOF\n")
+        f.write("FOF_PRIMARY_LINK_TYPES=2           # 2^type for the primary dark matter type\n")
+        f.write("FOF_SECONDARY_LINK_TYPES=" + str(self.FOF_SECONDARY_LINK_TYPES) + " # 2^type for the types linked to nearest primaries\n")
+    else:
+        f.write("#FOF\n")
+        f.write("#FOF_PRIMARY_LINK_TYPES=2           # 2^type for the primary dark matter type\n")
+        f.write("#FOF_SECONDARY_LINK_TYPES=" + str(self.FOF_SECONDARY_LINK_TYPES) + " # 2^type for the types linked to nearest primaries\n")
+    
+    f.write("#FOF_GROUP_MIN_LEN=32               # default is 32\n")
+    
+    if self.ENABLE_SUBFIND == True:
+        f.write("SUBFIND\n")
+    else:
+        f.write("#SUBFIND\n")
+    
+    f.write("#DENSITY_SPLIT_BY_TYPE=1+2+16+32    # 2^type for whch the densities should be calculated seperately\n")
+    f.write("#MAX_NGB_CHECK=3                    # Max numbers of neighbours for sattlepoint detection (default = 2)\n")
+    f.write("#SAVE_MASS_TAB                      # Saves the an additional array with the masses of the different components\n")
+    f.write("#SUBFINDSAVE_PARTICLELISTS         # Saves also phase-space and type variables parallel to IDs\n")
+    f.write("#SO_VEL_DISPERSIONS                 # computes velocity dispersions for as part of FOF SO-properties\n")
+    f.write("#ORDER_SNAPSHOTS_BY_ID\n")
+    f.write("#SAVE_HSML_IN_IC_ORDER              # will store the hsml-values in the order of the particles in the IC file\n")
+    f.write("#ONLY_PRODUCE_HSML_FILES            # only carries out density estimate\n")
+    f.write("#KEEP_HSML_AS_GUESS                 # keep using hsml for gas particles in subfind_density\n")
+    f.write("#LINKLENGTH=0.16                    # Linkinglength for FoF (default=0.2)\n")
+    f.write("#NO_GAS_CLOUDS                      # Do not accept pure gaseous substructures\n")
+    f.write("#WRITE_SUB_IN_SNAP_FORMAT           # Save subfind results in snap format\n")
+    f.write("#LT_ADD_GAL_TO_SUB=12                # Adds optical luminosities in 6 bands to subhalos\n")
+    f.write("#DUSTATT=11                         # Includes dust attenuation into the luminosity calculation (using 11 radial bins)\n")
+    f.write("#OBSERVER_FRAME                     # If defined, use CB07 Observer Frame Luminosities, otherwise CB07 Rest Frame Luminosities\n")
+    f.write("#SO_BAR_INFO                        # Adds temperature, Lx, bfrac, etc to Groups\n")
+    f.write("#FSUBFINDCOUNT_BIG_HALOS=1e4        # Adds extra blocks for Halos with M_TopHat > SUBFIND_COUNT_BIG_HALOS\n")
+    f.write("#KD_CHOOSE_PSUBFIND_LIMIT           # Increases the limit for the parallel subfind to the maximum possible\n")
+    f.write("#KD_ALTERNATIVE_GROUP_SORT          # Alternative way to sort the Groups/SubGroupe before writing\n")
+    f.write("#KD_CHOOSE_LINKING_LENGTH           # Special way to estimate the linking length\n")
+    f.write("#SUBFINDREAD_FOF\n")
+    f.write("#SUBFINDCOLLECTIVE_STAGE1\n")
+    f.write("#SUBFINDCOLLECTIVE_STAGE2\n")
+    f.write("#SUBFINDALTERNATIVE_COLLECTIVE\n")
+    f.write("#SUBFINDRESHUFFLE_CATALOGUE\n")
+    f.write("#SUBFINDRESHUFFLE_CATALOGUE_WITH_VORONOI\n")
+    f.write("#SUBFINDRESHUFFLE_AND_POTENTIAL    #needs -DSUBFIND_RESHUFFLE_CATALOGUE and COMPUTE_POTENTIAL_ENERGY\n")
+    f.write("#SUBFINDDENSITY_AND_POTENTIAL       #only calculated density and potential and write them into snapshot\n")
+    f.close()
 
   def makeparam(self,filename,ext,includesub):
       snapshots = range(0,int(self.nintervals))
@@ -497,56 +678,7 @@ class GadgetRun(HasTraits):
           f.write('DesLinkNgb                 ' + str(self.DesLinkNgb) + '\n')
                                     
       f.close()
-
-  def _createconfig_button_fired(self):
-      for cosmi in self.cosmologylist:
-          for boxtypei in self.boxtype:
-              for nrviri in self.nrvir:
-                  for paddingi in self.padding:
-                      for lmini in self.lmin:
-                          for lmaxi in self.lmax:
-                              for overlapi in self.overlap:
-                                  foldername = 'H' + str(self.haloid) + \
-                                              '_B' + str(boxtypei.upper())[0] + \
-                                              '_Z' + str(self.zinit) + \
-                                              '_P' + str(paddingi) + \
-                                              '_LN' + str(lmini) + \
-                                              '_LX' + str(lmaxi) + \
-                                              '_O' + str(overlapi) + \
-                                              '_NV' + str(nrviri)
-                                  
-                                  filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
-                                 
-                                  if not os.path.exists(filepath):
-                                      print "PATH NOT FOUND:",filepath
-                                  else:
-                                      print "PATH FOUND:",filepath
-
-                                      self.levelmaxuse = int(lmaxi)
-                                      #self.HubbleParam = 0.6711
-                                      self.Omega0,self.OmegaLambda,self.OmegaBaryon,self.HubbleParam,sigma8,nspec = cosmoconstant(cosmi)
-                                      #makeparam('param.txt',ENABLE_SUBFIND)
-                                      ext = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
-                                      if self.ENABLE_SUBFIND == True:
-                                          self.makeparam('param.txt',ext,includesub=False)
-                                          self.makeparam('param_sub.txt',ext,includesub=True)
-                                          mving = "mv param.txt " + filepath
-                                          print "Moving..."
-                                          print mving
-                                          subprocess.call([mving], shell=True)
-                                          mving = "mv param_sub.txt " + filepath
-                                          print "Moving..."
-                                          print mving
-                                          subprocess.call([mving], shell=True)
-                                      else:
-                                          self.makeparam('param.txt',ext,includesub=False)
-                                          mving = "mv param.txt " + filepath
-                                          print "Moving..."
-                                          print mving
-                                          subprocess.call([mving], shell=True)
-                                      
-                                      mkdirs = "mkdir -p outputs"
-                                      subprocess.call([mkdirs], shell=True)
+       
 
   def _checkexistence_button_fired(self):
 
@@ -712,6 +844,7 @@ class GadgetRun(HasTraits):
 
       #self.PBSstring = \
       #"#!/bin/sh \n#PBS -l nodes=3:ppn=8 \n#PBS -N H190897LX9N1 \n#PBS -m be \n. /opt/torque/etc/openmpi-setup.sh \ncd /spacebase/data/AnnaGroup/caterpillar/halos/H190897/H190897_BE_Z127_P7_LN7_LX9_O4_NV1 \nmpirun -np 24 ./P-Gadget3 ./param.txt 1>OUTPUT 2>ERROR"
+
 
 
    
