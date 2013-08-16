@@ -247,12 +247,22 @@ class HaloFind(HasTraits):
             cond2h = (np.array(halodata.data['posY']) >= yposhost - self.deltar/2.) & (np.array(halodata.data['posY']) <= yposhost + self.deltar/2.)
             cond3h = (np.array(halodata.data['posZ']) >= zposhost - self.deltar/2.) & (np.array(halodata.data['posZ']) <= zposhost + self.deltar/2.)
 
-            condh = cond1h & cond2h & cond3h 
+            condh = cond1h & cond2h & cond3h
+
+            condid =  (np.array(halodata.data['id']) == self.haloid)
+
+            condnew = condh & condid
 
             x = np.array(halodata.data['posX'][condh])
             y = np.array(halodata.data['posY'][condh])
             z = np.array(halodata.data['posZ'][condh])
             rvir =  np.array(halodata.data['rvir'][condh])
+            rvirn =  np.array(halodata.data['rvir'][condnew])
+            mvir =  np.array(halodata.data['mvir'][condnew])
+            rvmax =  np.array(halodata.data['rvmax'][condnew])
+            vmax =  np.array(halodata.data['vmax'][condnew])
+
+            print mvir,mvir/0.6711,rvirn,rvmax,vmax,xposhost,yposhost,zposhost
 
             extent = [xposhost-boxwidth,xposhost+boxwidth,yposhost-boxwidth,yposhost+boxwidth,zposhost-boxwidth,zposhost+boxwidth]
             self.main.scene.mlab.points3d(x, y, z, rvir/1000,colormap="copper")

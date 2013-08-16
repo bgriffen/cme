@@ -33,7 +33,7 @@ class InitialConditions(HasTraits):
     padding = List(editor = CheckListEditor(values = ['5','6','7','8','9','10'],cols=6) )
     lmin = Enum(['7','8','9','10','11','12','13','14','15'])
     #lmin = List(editor = CheckListEditor(values = ['7','8','9','10','11','12','13','14','15'],cols=9))
-    lmax = List(editor = CheckListEditor(values = ['7','8','9','10','11','12','13','14'],cols=9))
+    lmax = List(editor = CheckListEditor(values = ['7','8','9','10','11','12','13','14','15'],cols=9))
     overlap = List(editor = CheckListEditor(values = ['1','2','3','4','5','6'],cols=6) )
     nrvir = List(editor = CheckListEditor(values = ['1','2','3','4','5','6','7','8','9'],cols=11))
 
@@ -257,7 +257,7 @@ class InitialConditions(HasTraits):
                       subprocess.call(';'.join([cding, runmusic]), shell=True)
                       re.getBlocks(writepath)
   
-          else:
+          elif self.parentbox == False:
               for cosmi in self.cosmologylist:
                   for boxtypei in self.boxtype:
                       for nrviri in self.nrvir:
@@ -289,7 +289,9 @@ class InitialConditions(HasTraits):
                                             #self.outpath + 'halos/' + foldername + '/' + foldername + '.conf'
           
                                             self.centx,self.centy,self.centz,self.extx,self.exty,self.extz = getcentext(pointfile + '.head')
-          
+                                            #print self.parentbox
+                                            #print self.centx,self.centy,self.centz
+                                            #print self.extx,self.exty,self.extz
                                             omegam,omegal,omegab,hubble,sigma8,nspec = cosmoconstant(cosmi)
       
                                             baryonsstr = determineboolstr(self.baryons)
@@ -300,8 +302,8 @@ class InitialConditions(HasTraits):
                                             alignstr = determineboolstr(self.align)
                                             boxlength = 100
               
-                                            constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.refx,self.refy,self.refz, \
-                                                                   self.extentx,self.extenty,self.extentz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
+                                            constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.centx,self.centy,self.centz, \
+                                                                   self.extx,self.exty,self.extz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
                                                                    sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
                                                                    self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
                                             
@@ -740,8 +742,8 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
     f.write('region               = ' + str(boxtype) + '\n')
 
     if boxtype == 'box':
-        f.write('ref_center           = ' + str(refcentx) + ', ' + str(refcenty) + ', ' + str(refcentz) + '\n')
-        f.write('ref_extent           = ' + str(refextx) + ', ' + str(refexty) + ', ' + str(refextz) + '\n')
+        f.write('ref_center           = ' + str(refcentx) + ',' + str(refcenty) + ',' + str(refcentz) + '\n')
+        f.write('ref_extent           = ' + str(refextx) + ',' + str(refexty) + ',' + str(refextz) + '\n')
 
     f.write('region_point_file    = ' + str(pointfile) + '\n')
     f.write('align_top            = ' + str(align) + '\n')
@@ -762,8 +764,8 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
     f.write('[random]' + '\n')
 
     diff = int(lmax)+1 - int(lmin)
-    print diff
-    print int(lmax),int(lmin)
+    #print diff
+    #print int(lmax),int(lmin)
     seednumnew = random.sample(range(1000,9999), diff)
 
     seedi = 0
