@@ -234,8 +234,8 @@ class Candidates(HasTraits):
                     ax.set_ylabel('posY')
                     wx.CallAfter(self.main.display.canvas.draw)
     
-                if self.writeoutopt == True:
-                    out.close()
+            if self.writeoutopt == True:
+                out.close()
 
         elif self.loadpreviouscand == True:
             cand = getcandidatelist(self.writeoutpath + self.writeoutname)

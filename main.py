@@ -6,6 +6,7 @@ from gadgetrun import GadgetRun
 from halos import HaloFind
 from mergertree import MergerTree
 #from analysis import Analysis
+from contam import Contamination
 from candidates import Candidates
 
 from tvtk.pyface.scene_editor import SceneEditor
@@ -26,6 +27,7 @@ class ApplicationMain(HasTraits):
     halofindtab = Instance(HaloFind)
     mergertreetab = Instance(MergerTree)
     candidatestab = Instance(Candidates)
+    contaminationtab = Instance(Contamination)
     #analysistab = Instance(Analysis)
 
     display = Instance(Figure)
@@ -46,7 +48,8 @@ class ApplicationMain(HasTraits):
                          Item('initstab', style='custom', label='Initial Conditions',show_label=False),
                          Item('gadgetruntab', style='custom', label='Gadget',show_label=False),
                          Item('halofindtab', style='custom', label='Halo Finder',show_label=False),
-                         Item('mergertreetab', style='custom', label='Merger Tree',show_label=False))
+                         Item('mergertreetab', style='custom', label='Merger Tree',show_label=False),
+                         Item('contaminationtab', style='custom', label='Contam.',show_label=False))
                          #Item('analysistab', style='custom', label='Analysis',show_label=False))
     
     view = View(HSplit(left_panel,
@@ -98,6 +101,8 @@ class ApplicationMain(HasTraits):
     def _candidatestab_default(self):
         return Candidates(self)
         
+    def _contaminationtab_default(self):
+        return Contamination(self)
 
     def _markercolor_changed(self):
         ax = self.display.axes[0]

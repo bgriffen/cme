@@ -12,8 +12,8 @@ class GadgetRun(HasTraits):
   PBSqueue = Str("default")
   PBSoutputfile = Str("OUTPUT")
   PBSerrorfile = Str("ERROR")
-  PBSextraflags = Str("#PBS -be ")
-  PBSextralines = Str(". /opt/torque/etc/openmpi-setup.sh")
+  PBSextraflags = Str("#PBS -m ae ")
+  PBSextralines = Str("source /opt/torque/etc/openmpi-setup.sh")
   PBSexecute = Str()
   compilegadopt = Bool(False)
   InitCondFile = Str()
@@ -98,12 +98,12 @@ class GadgetRun(HasTraits):
   createconfig_button = Button("Make and distribute gadget!")
   padding = List(editor = CheckListEditor(values = ['5','6','7','8','9','10'],cols=6) )
   lmin = Enum(['7','8','9','10','11','12','13','14','15'])
-  lmax = List(editor = CheckListEditor(values = ['7','8','9','10','11','12','13','14'],cols=9))
+  lmax = Enum(['7','8','9','10','11','12','13','14','15'])
   overlap = List(editor = CheckListEditor(values = ['1','2','3','4','5','6'],cols=6) )
   nrvir = List(editor = CheckListEditor(values = ['1','2','3','4','5','6','7','8','9'],cols=11))
   cosmologylist = List( editor = CheckListEditor(values = ['WMAP1','WMAP3','WMAP5','WMAP7','WMAP9','PLANCK'],cols   = 6) )
   boxtype = List( editor = CheckListEditor(values = ['ellipsoid','box'],cols=2))
-  haloid = Int()
+  haloid = Int(190897)
   haloidlist = List(Int)
   zinit = Range(0,127,127)
   redshifti = Float()
@@ -119,16 +119,14 @@ class GadgetRun(HasTraits):
                     Item('gadpath',label='Base Path'),
                     Item(name='haloid',label='Halo ID'),
                     Item(name='nrvir',label='Nvir',style='custom'),
-                    HGroup(Item(name='boxtype',label='Box Type',style='custom'),Item(name='lmin',label='Level Min'),Item(name='zinit',label='zinit')),
+                    HGroup(Item(name='boxtype',label='Box Type',style='custom'),Item(name='lmin',label='LMIN'),Item(name='lmax',label='LMAX'),Item(name='zinit',label='zinit')),
                     Item(name='cosmologylist',label='Cosmology',style='custom'),
-                    Item(name='lmax',label='Level Max',style='custom'),
                     Item(name='padding',label='Padding',style='custom'),
                     Item(name='overlap',label='Overlap',style='custom')),
                     Group(Item('checkexistence_button',show_label=False)),
               Group(Item(name='haloidlist',show_label=False,style='readonly',editor=ListEditor(style='readonly',columns=6,rows=4)),label='Halo Sample',show_border=True)),label='Existence'),
 
               Group(
-              Item('levelmaxuse',label='Level Max'),
               Item('InitCondFile',label='InitCondFile'),
               Item('OutputDir',label='OutputDir'),
               Item('EnergyFile',label='EnergyFile'),
@@ -233,111 +231,123 @@ class GadgetRun(HasTraits):
               )
 
   def _subscript_button_fired(self):
+    #rmconfig = "rm /spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3"
+    #subprocess.call([rmconfig], shell=True)
+    f1 = open("rungadget.sh",'w')
+    f1.write("#!/bin/bash \n")
+    f1.write("ssh antares <<'ENDSSH' \n")
+    f1.write("cd /spacebase/data/bgriffen/lib/P-Gadget3\n")
+    f1.write("make clean\n")
+    f1.write("make\n")
+
     for boxtypei in self.boxtype:
-          for nrviri in self.nrvir:
-              for paddingi in self.padding:
-                  for lmini in self.lmin:
-                      for lmaxi in self.lmax:
-                          for overlapi in self.overlap:
-                              foldername = 'H' + str(self.haloid) + \
-                                          '_B' + str(boxtypei.upper())[0] + \
-                                          '_Z' + str(self.zinit) + \
-                                          '_P' + str(paddingi) + \
-                                          '_LN' + str(lmini) + \
-                                          '_LX' + str(lmaxi) + \
-                                          '_O' + str(overlapi) + \
-                                          '_NV' + str(nrviri)
+        for nrviri in self.nrvir:
+            for paddingi in self.padding:
+                  for overlapi in self.overlap:
+                      foldername = 'H' + str(self.haloid) + \
+                                  '_B' + str(boxtypei.upper())[0] + \
+                                  '_Z' + str(self.zinit) + \
+                                  '_P' + str(paddingi) + \
+                                  '_LN' + str(self.lmin) + \
+                                  '_LX' + str(self.lmax) + \
+                                  '_O' + str(overlapi) + \
+                                  '_NV' + str(nrviri)
+                      jobname = 'H' + str(self.haloid)[0:2] + \
+                                str(boxtypei.upper())[0] + \
+                                'P' + str(paddingi) + \
+                                'L' + str(self.lmax) + \
+                                'N' + str(nrviri)
+                      
+                      filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+                      if not os.path.exists(filepath):
+                          print "PATH NOT FOUND:",filepath
+                      else:
+                          print "PATH FOUND:",filepath
+                          self.levelmaxuse = int(self.lmax)
+                          self.Omega0,self.OmegaLambda,self.OmegaBaryon,self.HubbleParam,sigma8,nspec = cosmoconstant(self.cosmologylist[0])
+                          ext = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+                          if self.ENABLE_SUBFIND == True:
+                              self.makeparam('param.txt',ext,includesub=False)
+                              self.makeparam('param_sub.txt',ext,includesub=True)
+                              mving1 = "mv param.txt " + filepath
+                              mving2 = "mv param_sub.txt " + filepath
+                              subprocess.call(';'.join([mving1,mving2]), shell=True)
+                          else:
+                              self.makeparam('param.txt',ext,includesub=False)
+                              mving = "mv param.txt " + filepath
+                              subprocess.call([mving], shell=True)
+                              
+                          mkdirs = "mkdir -p " + filepath +  "/outputs"
+                          subprocess.call([mkdirs], shell=True)
+                      
+                      if self.ENABLE_SUBFIND == True:
+                           f = open(filepath + "/runscript_sub",'w')
+                      else:
+                           f = open(filepath + "/runscript",'w')
+                      #f = open(filepath + "/runscript",'w')
+                      f.write("#!/bin/csh" + "\n")
+                      f.write("#PBS -k eo\n")
+                      f.write("#PBS -l nodes=" + str(self.PBSnnodes) + ":ppn=" + str(self.PBSncores) + "\n")
+                      f.write("#PBS -N " + jobname + "\n")
+                      f.write("#PBS -M bgriffen@mit.edu\n")
+                      f.write("#PBS -o " + filepath + "/" + jobname + ".out\n")
+                      f.write("#PBS -e " + filepath + "/" + jobname + ".err\n")
+                      #f.write("#PBS -u " + self.PBSuser + "\n")
+                      f.write("#PBS -q " + self.PBSqueue + "\n")
+                      f.write(self.PBSextraflags + "\n")
+                      f.write("\n")
+                      f.write(self.PBSextralines + "\n")
+                      f.write("\n")
+                      f.write("cd " + filepath + "\n")
+                      f.write("\n")
+                      f.write(self.PBSexecute)
+                      f.close()
+                      if self.compilegadopt == True:
+                          if self.ENABLE_SUBFIND == True:
+                              self.constructconfigsh(filepath + "/Config_sub.sh")
+                              command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                              command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config_sub.sh"
+                              command7 = "cp " + filepath + "/Config_sub.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
+                              subprocess.call(';'.join([command5,command6,command7]), shell=True)
+                          else:
+                              self.constructconfigsh(filepath + "/Config.sh")
+                              command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                              command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config.sh"
+                              command7 = "cp " + filepath + "/Config.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
+                              subprocess.call(';'.join([command5,command6,command7]), shell=True)
+                          rmconfig = "rm " + filepath + "/bottomConfig"
+                          subprocess.call([rmconfig], shell=True)
+                      #try:
+                      #    with open("/spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3"): pass
+                      f1.write("cd " + str(filepath) + "\n")
+                      f1.write("rm " + str(filepath) + "/*.e*\n")
+                      f1.write("rm " + str(filepath) + "/*.o*\n")
+                      f1.write("rm " + str(filepath) + "/ExpansionList_64\n")
 
-                              jobname = 'H' + str(self.haloid)[0:2] + \
-                                        str(boxtypei.upper())[0] + \
-                                        'P' + str(paddingi) + \
-                                        'L' + str(lmaxi) + \
-                                        'N' + str(nrviri)
+                      if self.ENABLE_SUBFIND == True:
+                          f1.write("\n")
+                          f1.write("rm P-Gadget3_sub\n")
+                          f1.write("rm P-Gadget3_Sub\n")
+                          f1.write("rm ERRORsub\n")
+                          f1.write("rm OUTPUTsub\n")
+                          f1.write("cp /spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
+                          f1.write("qsub runscript_sub \n")
+                      else:
+                          f1.write("\n")
+                          f1.write("rm P-Gadget3\n")
+                          f1.write("rm ERROR\n")
+                          f1.write("rm OUTPUT\n")
+                          f1.write("cp /spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3\n")
+                          f1.write("qsub runscript \n")
 
-                              filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+    f1.write("logout \n")
+    f1.close()
 
-                              if not os.path.exists(filepath):
-                                  print "PATH NOT FOUND:",filepath
-                              else:
-                                  print "PATH FOUND:",filepath
+    command = "bash rungadget.sh"
+    subprocess.call(';'.join([command]), shell=True)
 
-                                  self.levelmaxuse = int(lmaxi)
-                                  self.Omega0,self.OmegaLambda,self.OmegaBaryon,self.HubbleParam,sigma8,nspec = cosmoconstant(self.cosmologylist[0])
-                                  ext = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
-                                  if self.ENABLE_SUBFIND == True:
-                                      self.makeparam('param.txt',ext,includesub=False)
-                                      self.makeparam('param_sub.txt',ext,includesub=True)
-                                      mving1 = "mv param.txt " + filepath
-                                      mving2 = "mv param_sub.txt " + filepath
-                                      subprocess.call(';'.join([mving1,mving2]), shell=True)
-                                  else:
-                                      self.makeparam('param.txt',ext,includesub=False)
-                                      mving = "mv param.txt " + filepath
-                                      subprocess.call([mving], shell=True)
-                                      
-                                  mkdirs = "mkdir -p " + filepath +  "/outputs"
-                                  subprocess.call([mkdirs], shell=True)
-
-                              f = open(filepath + "/runscript",'w')
-                              f.write("#!/bin/sh" + "\n")
-                              f.write("#PBS -l nodes=" + str(self.PBSnnodes) + ":ppn=" + str(self.PBSncores) + "\n")
-                              f.write("#PBS -N " + jobname + "\n")
-                              f.write("#PBS -u " + self.PBSuser + "\n")
-                              f.write("#PBS -q " + self.PBSqueue + "\n")
-                              f.write(self.PBSextraflags + "\n")
-                              f.write("\n")
-                              f.write(self.PBSextralines + "\n")
-                              f.write("\n")
-                              f.write("cd " + filepath + "\n")
-                              f.write("\n")
-                              f.write(self.PBSexecute)
-      
-                              f.close()
-
-                              if self.compilegadopt == True:
-                                  #command1 = "cd /spacebase/data/bgriffen/lib/P-Gadget3"
-                                  #command2 = "make clean"
-                                  #command3 = "make"
-                                  if self.ENABLE_SUBFIND == True:
-                                      #command4 = "cp P-Gadget3 " + filepath + "/P-Gadget3_sub"
-                                      self.constructconfigsh(filepath + "/Config_sub.sh")
-                                      command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
-                                      command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config_sub.sh"
-                                      command7 = "cp " + filepath + "/Config_sub.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
-                                      subprocess.call(';'.join([command5,command6,command7]), shell=True)
-                                  else:
-                                      #command4 = "cp P-Gadget3 " + filepath
-                                      self.constructconfigsh(filepath + "/Config.sh")
-                                      command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
-                                      command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config.sh"
-                                      command7 = "cp " + filepath + "/Config.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
-                                      subprocess.call(';'.join([command5,command6,command7]), shell=True)
-
-                                  rmconfig = filepath + "/bottomConfig"
-                                  subprocess.call([rmconfig], shell=True)
-
-                                  #subprocess.call(';'.join([command1,command2,command3,command4]), shell=True)
-                                  
-                                  f = open(filepath + "/rungadget.sh",'w')
-                                  f.write("#!/bin/bash \n")
-                                  f.write("ssh antares <<'ENDSSH' \n")
-                                  f.write("cd /spacebase/data/bgriffen/lib/P-Gadget3\n")
-                                  f.write("make clean\n")
-                                  f.write("make\n")
-
-                                  if self.ENABLE_SUBFIND == True:
-                                      f.write("cp P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
-                                  else:
-                                      f.write("cp P-Gadget3 " + filepath + "/P-Gadget3\n")
-
-                                  f.write("cd " + filepath + "\n")
-                                  f.write("qsub runscript \n")
-                                  f.write("logout \n")
-                                  f.close()
-                                  command = "bash " + str(filepath) + "/rungadget.sh"
-                                  subprocess.call(';'.join([command]), shell=True)
-                                  command = "rm " + str(filepath) + "/rungadget.sh"
-                                  subprocess.call(';'.join([command]), shell=True)
+    #command = "rm " + str(filepath) + "/rungadget.sh"
+    #subprocess.call(';'.join([command]), shell=True)
 
     print "SUBMITTED JOBS - BACK AT SPACEBASE!"
 
@@ -428,8 +438,7 @@ class GadgetRun(HasTraits):
      #     self.ExpansionListArr[:,2] = io3
      #     self.ExpansionListArr[:,3] = io4
 
-      
-
+    
   def _expfacti_changed(self):
     self.redshifti = 1./self.expfacti - 1
 
@@ -438,27 +447,34 @@ class GadgetRun(HasTraits):
 
   def _BoxSize_changed(self):
       self.SofteningGas = 0.0
-      self.SofteningHalo = self.BoxSize/2**float(self.levelmaxuse)/40.
+      self.SofteningHalo = self.BoxSize/2**float(self.lmax)/40.
       self.SofteningDisk = 2*self.SofteningHalo 
       self.SofteningBulge = 2*self.SofteningDisk 
       self.SofteningStars = 2*self.SofteningBulge 
       self.SofteningBndry = 2*self.SofteningStars 
       self.SofteningGasMaxPhys = 0.0
-      self.SofteningHaloMaxPhys = self.BoxSize/2**float(self.levelmaxuse)/40.
+      self.SofteningHaloMaxPhys = self.BoxSize/2**float(self.lmax)/40.
       self.SofteningDiskMaxPhys = 2*self.SofteningHaloMaxPhys 
       self.SofteningBulgeMaxPhys = 2*self.SofteningDiskMaxPhys 
       self.SofteningStarsMaxPhys = 2*self.SofteningBulgeMaxPhys 
       self.SofteningBndryMaxPhys = 2*self.SofteningStarsMaxPhys 
 
-  def _levelmaxuse_changed(self):
+  def _lmax_changed(self):
+      if int(self.lmax) <= 11:
+          self.PMGRID = 256
+      elif 12 <= int(self.lmax) <= 13:
+          self.PMGRID = 512
+      elif int(self.lmax) > 13:
+          self.PMGRID = 1024  
+
       self.SofteningGas = 0.0
-      self.SofteningHalo = self.BoxSize/2**float(self.levelmaxuse)/40.
+      self.SofteningHalo = self.BoxSize/2**float(self.lmax)/40.
       self.SofteningDisk = 2*self.SofteningHalo 
       self.SofteningBulge = 2*self.SofteningDisk 
       self.SofteningStars = 2*self.SofteningBulge 
       self.SofteningBndry = 2*self.SofteningStars 
       self.SofteningGasMaxPhys = 0.0
-      self.SofteningHaloMaxPhys = self.BoxSize/2**float(self.levelmaxuse)/40.
+      self.SofteningHaloMaxPhys = self.BoxSize/2**float(self.lmax)/40.
       self.SofteningDiskMaxPhys = 2*self.SofteningHaloMaxPhys 
       self.SofteningBulgeMaxPhys = 2*self.SofteningDiskMaxPhys 
       self.SofteningStarsMaxPhys = 2*self.SofteningBulgeMaxPhys 
@@ -705,61 +721,58 @@ class GadgetRun(HasTraits):
       for boxtypei in self.boxtype:
           for nrviri in self.nrvir:
               for paddingi in self.padding:
-                  for lmini in self.lmin:
-                      for lmaxi in self.lmax:
-                          for overlapi in self.overlap:
-                              foldername = 'H' + str(self.haloid) + \
-                                          '_B' + str(boxtypei.upper())[0] + \
-                                          '_Z' + str(self.zinit) + \
-                                          '_P' + str(paddingi) + \
-                                          '_LN' + str(lmini) + \
-                                          '_LX' + str(lmaxi) + \
-                                          '_O' + str(overlapi) + \
-                                          '_NV' + str(nrviri)
-
-                              filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
-                              
-                              #print filepath
-                              #print filepath + '/ics.0'
-                              #print filepath + '/outputs/snapdir_064'
-                              #print filepath + '/outputs/groups_064'
-
-                              try:
-                                 with open(filepath + '/ics.0'):
-                                     icfound = '+'
-                              except IOError:
-                                 icfound = '-'
-
-                              if os.path.exists(filepath + '/outputs/snapdir_063'):
-                                   gadfound = '+'
-                              else:
-                                   gadfound = '-'
-                        
-                              if os.path.exists(filepath + '/outputs/groups_063'):
-                                   halosfound = '+'
-                              else:
-                                   halosfound = '-'
-                             
-                              txtdisplace += 0.03
-                              placenormtext(ax,0.02, 0.98 - txtdisplace,str(self.haloid),10)
-                              placenormtext(ax,0.14, 0.98 - txtdisplace,str(boxtypei.upper()),10)
-                              placenormtext(ax,0.615, 0.98 - txtdisplace,str(paddingi),10)
-                              placenormtext(ax,0.42, 0.98 - txtdisplace,str(lmini),10)
-                              placenormtext(ax,0.52, 0.98 - txtdisplace,str(lmaxi),10)
-                              placenormtext(ax,0.325, 0.98 - txtdisplace,str(nrviri),10)
-                              placenormtext(ax,0.71, 0.98 - txtdisplace,str(icfound),10)
-                              placenormtext(ax,0.81, 0.98 - txtdisplace,str(gadfound),10)
-                              placenormtext(ax,0.94, 0.98 - txtdisplace,str(halosfound),10)
+                  for overlapi in self.overlap:
+                      foldername = 'H' + str(self.haloid) + \
+                                  '_B' + str(boxtypei.upper())[0] + \
+                                  '_Z' + str(self.zinit) + \
+                                  '_P' + str(paddingi) + \
+                                  '_LN' + str(self.lmin) + \
+                                  '_LX' + str(self.lmax) + \
+                                  '_O' + str(overlapi) + \
+                                  '_NV' + str(nrviri)
+                                  
+                      filepath = self.gadpath + 'halos/H' + str(self.haloid) + '/' + foldername
+                      
+                      #print filepath
+                      #print filepath + '/ics.0'
+                      #print filepath + '/outputs/snapdir_064'
+                      #print filepath + '/outputs/groups_064'
+                      try:
+                         with open(filepath + '/ics.0'):
+                             icfound = '+'
+                      except IOError:
+                         icfound = '-'
+                      if os.path.exists(filepath + '/outputs/snapdir_063'):
+                           gadfound = '+'
+                      else:
+                           gadfound = '-'
+                
+                      if os.path.exists(filepath + '/outputs/groups_063'):
+                           halosfound = '+'
+                      else:
+                           halosfound = '-'
+                     
+                      txtdisplace += 0.03
+                      placenormtext(ax,0.02, 0.98 - txtdisplace,str(self.haloid),10)
+                      placenormtext(ax,0.14, 0.98 - txtdisplace,str(boxtypei.upper()),10)
+                      placenormtext(ax,0.615, 0.98 - txtdisplace,str(paddingi),10)
+                      placenormtext(ax,0.42, 0.98 - txtdisplace,str(self.lmin),10)
+                      placenormtext(ax,0.52, 0.98 - txtdisplace,str(self.lmax),10)
+                      placenormtext(ax,0.325, 0.98 - txtdisplace,str(nrviri),10)
+                      placenormtext(ax,0.71, 0.98 - txtdisplace,str(icfound),10)
+                      placenormtext(ax,0.81, 0.98 - txtdisplace,str(gadfound),10)
+                      placenormtext(ax,0.94, 0.98 - txtdisplace,str(halosfound),10)
                             
       wx.CallAfter(self.main.display.canvas.draw)                                
 
   def __init__(self, main, **kwargs):
       HasTraits.__init__(self)
       self.main = main
+      self.boxtype = ['ellipsoid']
       self.nvir = ['3','4','5','6','7','8','9']
-      self.padding = ['7','8','9','10']
+      self.padding = ['7','8','9']
       self.overlap = ['4']
-      self.lmax = ['11']
+      self.lmax = '11'
       self.cosmologylist = ['PLANCK']
       self.haloidlist = self.main.candidatestab.haloid
       self.gadpath = self.main.headertab.datamasterpath
