@@ -1,5 +1,5 @@
 from Common import *
-import mergertrees.MTCatalogue as MT
+import modules.mergertrees.MTCatalogue as MT
 
 class MergerTree(HasTraits):
 

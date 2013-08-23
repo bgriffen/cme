@@ -64,8 +64,14 @@ class Header(HasTraits):
         if platform.node() == 'barrine':
             self.username = 'uqbgriff'
 
-        if platform.node() == 'odyssey':
-            self.clusteropt = 'odyssey'
+        if platform.node() == 'rclogin13.rc.fas.harvard.edu':
+            self.clustopt = 'odyssey'
+            self.homepath = '/n/home01/bgriffen/data/'
+            self.masterpath = self.homepath + self.username
+            self.gadgetpath = self.masterpath + '/lib/P-Gadget3'
+            self.musicpath = self.masterpath+ '/lib/music'
+            self.datamasterpath = self.homepath + 'caterpillar/'
+            self.parentsimpath = self.homepath + 'caterpillar/parent/'
 
         if platform.node() == 'spacebase':
             self.clusteropt = 'spacebase'
