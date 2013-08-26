@@ -113,7 +113,8 @@ class GadgetRun(HasTraits):
   alloutputopt = Bool(True)
   PBSstring = Str()
   vizexpz_button = Button("Inspect/Update List")
-  subscript_button = Button("Create Submission Script")
+  subscript_button = Button("Run Script")
+  submitjob = Bool(False)
 
   view = View(Group(Group(Group(
                     Item('gadpath',label='Base Path'),
@@ -226,17 +227,17 @@ class GadgetRun(HasTraits):
                     Item('PBSextraflags',label='Extra Flag'),
                     Item('PBSextralines',label='Extra Lines'),
                     Item('PBSexecute',label='Execute Line')),
-                    HGroup(Item('compilegadopt',label='Compile Gadget?'),Item('subscript_button',show_label=False)),
+                    HGroup(Item('compilegadopt',label='Compile Gadget?'),Item('submitjob',label='Submit Job?'),Item('subscript_button',show_label=False)),
                     label='Write & Submit Job')
               )
 
   def _subscript_button_fired(self):
-    #rmconfig = "rm /spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3"
+    #rmconfig = "rm /bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3"
     #subprocess.call([rmconfig], shell=True)
     f1 = open("rungadget.sh",'w')
     f1.write("#!/bin/bash \n")
     f1.write("ssh antares <<'ENDSSH' \n")
-    f1.write("cd /spacebase/data/bgriffen/lib/P-Gadget3\n")
+    f1.write("cd /bigbang/data/bgriffen/lib/P-Gadget3\n")
     f1.write("make clean\n")
     f1.write("make\n")
 
@@ -305,24 +306,24 @@ class GadgetRun(HasTraits):
                       if self.compilegadopt == True:
                           if self.ENABLE_SUBFIND == True:
                               self.constructconfigsh(filepath + "/Config_sub.sh")
-                              command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                              command5 = "tail -n+96 /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
                               command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config_sub.sh"
-                              command7 = "cp " + filepath + "/Config_sub.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
+                              command7 = "cp " + filepath + "/Config_sub.sh /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh"
                               subprocess.call(';'.join([command5,command6,command7]), shell=True)
                           else:
                               self.constructconfigsh(filepath + "/Config.sh")
-                              command5 = "tail -n+96 /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                              command5 = "tail -n+96 /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
                               command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config.sh"
-                              command7 = "cp " + filepath + "/Config.sh /spacebase/data/bgriffen/lib/P-Gadget3/Config.sh"
+                              command7 = "cp " + filepath + "/Config.sh /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh"
                               subprocess.call(';'.join([command5,command6,command7]), shell=True)
                           rmconfig = "rm " + filepath + "/bottomConfig"
                           subprocess.call([rmconfig], shell=True)
                       #try:
-                      #    with open("/spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3"): pass
+                      #    with open("/bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3"): pass
                       f1.write("cd " + str(filepath) + "\n")
                       f1.write("rm " + str(filepath) + "/*.e*\n")
                       f1.write("rm " + str(filepath) + "/*.o*\n")
-                      f1.write("rm " + str(filepath) + "/ExpansionList_64\n")
+                      #f1.write("rm " + str(filepath) + "/ExpansionList_64\n")
 
                       if self.ENABLE_SUBFIND == True:
                           f1.write("\n")
@@ -330,15 +331,17 @@ class GadgetRun(HasTraits):
                           f1.write("rm P-Gadget3_Sub\n")
                           f1.write("rm ERRORsub\n")
                           f1.write("rm OUTPUTsub\n")
-                          f1.write("cp /spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
-                          f1.write("qsub runscript_sub \n")
+                          f1.write("cp /bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
+                          if self.submitjob == True:
+                              f1.write("qsub runscript_sub \n")
                       else:
                           f1.write("\n")
                           f1.write("rm P-Gadget3\n")
                           f1.write("rm ERROR\n")
                           f1.write("rm OUTPUT\n")
-                          f1.write("cp /spacebase/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3\n")
-                          f1.write("qsub runscript \n")
+                          f1.write("cp /bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3\n")
+                          if self.submitjob == True:
+                              f1.write("qsub runscript \n")
 
     f1.write("logout \n")
     f1.close()
@@ -349,7 +352,7 @@ class GadgetRun(HasTraits):
     #command = "rm " + str(filepath) + "/rungadget.sh"
     #subprocess.call(';'.join([command]), shell=True)
 
-    print "SUBMITTED JOBS - BACK AT SPACEBASE!"
+    print "SUBMITTED JOBS - BACK AT bigbang!"
 
   def _ENABLE_SUBFIND_changed(self):
       if self.ENABLE_SUBFIND == True:
@@ -361,7 +364,7 @@ class GadgetRun(HasTraits):
       if self.ENABLE_SUBFIND == True:
         self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
       else:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param_sub.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
        
   def _PBSnnodes_changed(self):
       if self.ENABLE_SUBFIND == True:
@@ -856,7 +859,7 @@ class GadgetRun(HasTraits):
 
 
       #self.PBSstring = \
-      #"#!/bin/sh \n#PBS -l nodes=3:ppn=8 \n#PBS -N H190897LX9N1 \n#PBS -m be \n. /opt/torque/etc/openmpi-setup.sh \ncd /spacebase/data/AnnaGroup/caterpillar/halos/H190897/H190897_BE_Z127_P7_LN7_LX9_O4_NV1 \nmpirun -np 24 ./P-Gadget3 ./param.txt 1>OUTPUT 2>ERROR"
+      #"#!/bin/sh \n#PBS -l nodes=3:ppn=8 \n#PBS -N H190897LX9N1 \n#PBS -m be \n. /opt/torque/etc/openmpi-setup.sh \ncd /bigbang/data/AnnaGroup/caterpillar/halos/H190897/H190897_BE_Z127_P7_LN7_LX9_O4_NV1 \nmpirun -np 24 ./P-Gadget3 ./param.txt 1>OUTPUT 2>ERROR"
 
 
 

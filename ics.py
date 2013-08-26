@@ -163,7 +163,7 @@ class InitialConditions(HasTraits):
                                                       HGroup(Item(name='parentseedlevel',label='Seed Level',style='readonly'),
                                                              Item(name='parentseednum',label='Seed Value',style='readonly')),
                                                       Item(name='resimlagrdir',label='Pointer Directory'),
-                                                      HGroup(Item(name='haloidselect',label='HaloID'),
+                                                      HGroup(Item(name='haloidselect',label='Halo ID'),
                                                         Item(name='resimlagrfile',label='Pointer File',springy=True)),
                                                       Item(name='nrvir',label='N*Rvir(z=0)',style='custom'))
                                        ,enabled_when='resimbox==True'),enabled_when='parentbox==False')
@@ -301,18 +301,19 @@ class InitialConditions(HasTraits):
                                             fftfinestr = determineboolstr(self.fftfine)
                                             alignstr = determineboolstr(self.align)
                                             boxlength = 100
-              
+                                            #print self.haloidselect
                                             constructresimconf(confname,boxlength,self.zinit,lmini,self.lTF,lmaxi,paddingi,overlapi,self.centx,self.centy,self.centz, \
                                                                    self.extx,self.exty,self.extz,alignstr,baryonsstr,use2LPTstr,useLLAstr,omegam,omegal,omegab,hubble, \
                                                                    sigma8,nspec,self.tranfunc[0],self.parentseednum,self.parentseedlevel,self.outformat,'./' + self.outfilename,fftfinestr,self.accuracy,self.presmooth,self.postsmooth, \
-                                                                   self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput)
+                                                                   self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput,self.haloidselect,nrviri)
                                             
                                             self.confstatus = 'Generated halo configuration files.'
                                             runmusic = self.musicpath + '/MUSIC ' + confname
                                             cding = "cd " + writepath
+                                            rmfiles = "rm wnoise* temp*"
                                             print "EXECUTING..."
                                             print runmusic
-                                            subprocess.call(';'.join([cding, runmusic]), shell=True)
+                                            subprocess.call(';'.join([cding, runmusic,rmfiles]), shell=True)
                                             #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
                                             #runconvert = "python convertics.py"
                                             #rmconvert = "rm reWriteIC.py convertics.py"
@@ -728,7 +729,7 @@ class InitialConditions(HasTraits):
 def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,refcentx,refcenty,refcentz, \
                         refextx,refexty,refextz,align,baryons,use2LPT,useLLA,omegam,omegal,omegab,hubble, \
                         sigma8,nspec,transfer,seednum,seedlevel,outformat,icfilename,fftfine,accuracy,presmooth,postsmooth, \
-                        smoother,laplaceorder,gradorder,boxlevel,periodicTFstr,pointfile,boxtype,noutput):
+                        smoother,laplaceorder,gradorder,boxlevel,periodicTFstr,pointfile,boxtype,noutput,haloid,nrvir):
 
     f = open(confname,'w')
     f.write('[setup]' + '\n')
@@ -763,19 +764,38 @@ def constructresimconf(confname,boxlength,zstart,lmin,lTF,lmax,padding,overlap,r
     f.write('\n')
     f.write('[random]' + '\n')
 
-    diff = int(lmax)+1 - int(lmin)
+    #diff = int(lmax)+1 - int(lmin)
     #print diff
     #print int(lmax),int(lmin)
-    seednumnew = random.sample(range(1000,9999), diff)
+    #seednumnew = random.sample(range(10000,99999), diff)
 
-    seedi = 0
-    for level in range(int(lmin),int(lmax)+1):
+    #seedi = 0
+    #print haloid
+    #mult = nrvir
+    #f.write('seed[' + str(7) + ']              = ' + str(345) + '\n')
+    #f.write('seed[' + str(8) + ']              = ' + str(3456) + '\n')
+    #f.write('seed[' + str(9) + ']              = ' + str(34567) + '\n')
+    delta = int(nrvir)
+    for level in range(seedlevel,int(lmax)+1):
+        delta += delta*2 + 1
         if level != seedlevel:
-            seeduse = seednumnew[seedi]
+            seeduse = int(haloid) + int(delta)
+            #seeduse = seednumnew[seedi]
             f.write('seed[' + str(level) + ']              = ' + str(seeduse) + '\n')
-            seedi += 1
+        elif level == seedlevel:
+            f.write('seed[' + str(seedlevel) + ']              = ' + str(seednum) + '\n')
+            #seedi += 1
+
+    #f.write('seed[7]              = ' + str(seeduse) + '\n')
+    #f.write('seed[8]              = ' + str(seeduse) + '\n')
+    #f.write('seed[9]              =' str(34567\n')
+    #f.write('seed[10]              = ' + str(seeduse) + '\n')
+    #f.write('seed[11]              = ' + str(seeduse) + '\n')
     
-    f.write('seed[' + str(seedlevel) + ']              = ' + str(seednum) + '\n')
+    #if int(lmax) == 12:
+    #    f.write('seed[12]              = 2600\n')
+    
+    
 
     f.write('\n')
     f.write('[output]' + '\n')

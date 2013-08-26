@@ -116,7 +116,8 @@ class Candidates(HasTraits):
                       ),label='Tabulate'))
 
     def _haloid_default(self):
-        return [190897,208737]
+        return [268422,242183,140666,241932,96624,121869,1930,173411,21047,233776]
+        #[190897,208737]
         #,140666,28221,147419,28188,147273,78411,131988,19910]
 
     def _addhalo_button_fired(self):
@@ -134,7 +135,8 @@ class Candidates(HasTraits):
         self.main.mergertreetab.haloidlist = self.haloid
         self.main.halofindtab.haloidlist = self.haloid
         self.main.mergertreetab.haloidlist = self.haloid
-        self.main.initstab.haloidlist = self.haloid
+        self.main.initstab.haloid = self.haloid
+        self.main.gadgetruntab.haloidlist = self.haloid
 
     def _haloidtoadd_changed(self):
         self.jobstatus = "Waiting for next addition."
