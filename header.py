@@ -12,7 +12,7 @@ class Header(HasTraits):
                 Item(name='parentsimpath',label='Parent Sim.',padding=5),
                 Item(name='datamasterpath',label='Project Data',padding=5))
     
-    clusteropt = Enum(['antares','barrine','odyssey','macbook','spacebase','bigbang'])
+    clusteropt = Enum(['antares','barrine','odyssey','macbook','spacebase','bigbang','macbook'])
     username = Str
     masterpath = Directory
     homepath = Directory
@@ -52,11 +52,18 @@ class Header(HasTraits):
     def __init__(self, main, **kwargs):
         self.username = getpass.getuser()
         self.homepath = expanduser("~")
-#        if platform.node() == "csr-dyn-150.mit.edu":
-#            self.homepath = '/Users/'
+        if platform.node() == "csr-dyn-150.mit.edu":
+            self.clusteropt = 'macbook'
+            self.homepath = '/Users/griffen/Desktop/cme/'
+            self.masterpath = self.homepath + self.username
+            self.gadgetpath = self.masterpath + '/lib/P-Gadget3'
+            self.musicpath = self.masterpath+ '/lib/music'
+            self.datamasterpath = self.homepath + 'AnnaGroup/caterpillar/'
+            self.parentsimpath = self.homepath + 'AnnaGroup/caterpillar/parent/'
+            #self.homepath = '/Users/'
 #        
-#        if platform.node() == "Brendans-MacBook-Pro.local":
-#            self.homepath = '/Users/'
+        if platform.node() == "Brendans-MacBook-Pro.local":
+            self.homepath = '/Users/'
 #            
         if platform.node() == 'antares':
             self.clusteropt = 'antares'

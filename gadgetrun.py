@@ -6,12 +6,12 @@ class GadgetRun(HasTraits):
   
   PBSncores = Range(0,64,8)
   PBSnnodes = Range(0,10,8)
-  PBSuser = Str("bgriffen")
+  username = Str("bgriffen")
   PBSemail = Str("bgriffen@space.mit.edu")
   PBSjobname = Str()
   PBSqueue = Str("default")
-  PBSoutputfile = Str("OUTPUT")
-  PBSerrorfile = Str("ERROR")
+  outfile = Str("OUTPUT")
+  errorfile = Str("ERROR")
   PBSextraflags = Str("#PBS -m ae ")
   PBSextralines = Str("source /opt/torque/etc/openmpi-setup.sh")
   PBSexecute = Str()
@@ -116,6 +116,14 @@ class GadgetRun(HasTraits):
   subscript_button = Button("Run Script")
   submitjob = Bool(False)
 
+  SLURMcores = Range(64,512,64)
+  SLURMtime = Int(5000)
+  SLURMmemory = Int(3500)
+  SLURMqueue =  Enum(['itc_cluster','general','serial_requeue'])
+  emailaddress = Str('brendan.f.griffen@gmail.com')
+  subtype = Enum(['SLURM','PBS'])
+  SLURMexecute = Str()
+
   view = View(Group(Group(Group(
                     Item('gadpath',label='Base Path'),
                     Item(name='haloid',label='Halo ID'),
@@ -215,31 +223,50 @@ class GadgetRun(HasTraits):
                     Item('ENABLE_SUBFIND',label='Subfind'),
                     Group(Item('FOF_SECONDARY_LINK_TYPES',label='FOF_SECONDARY_LINK_TYPES'),enabled_when='ENABLE_SUBFIND==True',springy=True)),
                     Item('_'),
-                    Group(Item('clusteropt',label='Cluster',style='readonly'),
+                    Item('clusteropt',label='Cluster',style='readonly'),
+                    Item('subtype',label='Submission Type'),
+                    Item('emailaddress',label='Email'),
+                    Item('outfile',label='Output File'),
+                    Item('errorfile',label='Error File'),
+                    Item('username',label='Username'),
+                    Group(
                     Item('PBSncores',label='# Cores'),
                     Item('PBSnnodes',label='# Nodes'),
-                    Item('PBSuser',label='Username'),
-                    Item('PBSemail',label='Email'),
-                    #Item('PBSjobname',label='Job Name'),
                     Item('PBSqueue',label='Queue'),
-                    Item('PBSoutputfile',label='Output File'),
-                    Item('PBSerrorfile',label='Error File'),
                     Item('PBSextraflags',label='Extra Flag'),
                     Item('PBSextralines',label='Extra Lines'),
-                    Item('PBSexecute',label='Execute Line')),
-                    HGroup(Item('compilegadopt',label='Compile Gadget?'),Item('submitjob',label='Submit Job?'),Item('subscript_button',show_label=False)),
+                    Item('PBSexecute',label='Execute Line'),show_border=True,enabled_when="subtype=='PBS'"),
+
+                    Group(
+                    Item('SLURMcores',label='# Cores'),
+                    Item('SLURMtime',label='Runtime'),
+                    Item('SLURMmemory',label='Memory'),
+                    Item('SLURMqueue',label='Queue'),
+                    Item('SLURMexecute',label='Execute Line'),show_border=True,enabled_when="subtype=='SLURM'"),
+                    
+                    HGroup(Item('compilegadopt',label='(Re-)Compile Gadget?'),Item('submitjob',label='Submit Job?'),Item('subscript_button',show_label=False)),
                     label='Write & Submit Job')
               )
 
   def _subscript_button_fired(self):
-    #rmconfig = "rm /bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3"
-    #subprocess.call([rmconfig], shell=True)
+
     f1 = open("rungadget.sh",'w')
     f1.write("#!/bin/bash \n")
-    f1.write("ssh antares <<'ENDSSH' \n")
-    f1.write("cd /bigbang/data/bgriffen/lib/P-Gadget3\n")
+
+    if self.subtype == "PBS":
+        gadgetfilepath = "/bigbang/data/bgriffen/lib/"
+
+        f1.write("cd " + gadgetfilepath "P-Gadget3\n")
+        f1.write("ssh antares <<'ENDSSH' \n")
+        
+    if self.subtype == "SLURM":
+        gadgetfilepath = "/n/home01/bgriffen/data/lib/"
+        f1.write("unloadmods\n")
+        f1.write("loadgadget\n")
+        f1.write("cd " + gadgetfilepath "P-Gadget3\n")
+        
     f1.write("make clean\n")
-    f1.write("make\n")
+    f1.write("make -j 8\n")
 
     for boxtypei in self.boxtype:
         for nrviri in self.nrvir:
@@ -286,35 +313,58 @@ class GadgetRun(HasTraits):
                       else:
                            f = open(filepath + "/runscript",'w')
                       #f = open(filepath + "/runscript",'w')
-                      f.write("#!/bin/csh" + "\n")
-                      f.write("#PBS -k eo\n")
-                      f.write("#PBS -l nodes=" + str(self.PBSnnodes) + ":ppn=" + str(self.PBSncores) + "\n")
-                      f.write("#PBS -N " + jobname + "\n")
-                      f.write("#PBS -M bgriffen@mit.edu\n")
-                      f.write("#PBS -o " + filepath + "/" + jobname + ".out\n")
-                      f.write("#PBS -e " + filepath + "/" + jobname + ".err\n")
-                      #f.write("#PBS -u " + self.PBSuser + "\n")
-                      f.write("#PBS -q " + self.PBSqueue + "\n")
-                      f.write(self.PBSextraflags + "\n")
-                      f.write("\n")
-                      f.write(self.PBSextralines + "\n")
-                      f.write("\n")
-                      f.write("cd " + filepath + "\n")
-                      f.write("\n")
-                      f.write(self.PBSexecute)
-                      f.close()
+
+
+                      if self.subtype == "SLURM":
+                          f.write('#!/bin/bash\n')
+                          f.write('#SBATCH -n ' + self.SLURMcores + '\n')
+                          f.write('#SBATCH -o ' + jobname + '.o%j\n')
+                          f.write('#SBATCH -e ' + jobname + '.e%j\n')
+                          f.write('#SBATCH -t ' + self.SLURMtime + '\n')
+                          f.write('#SBATCH -p ' + self.SLURMqueue + '\n')
+                          f.write('#SBATCH --mem-per-cpu=' + self.SLURMmemory + '\n')
+                          f.write('#SBATCH --mail-user=' + self.emailaddress + '\n')
+                          f.write('#SBATCH -J '+ jobname + '\n')
+                          f.write('#SBATCH --mail-type=begin\n')
+                          f.write('#SBATCH --mail-type=end\n')
+                          f.write("\n")
+                          f.write("cd " + filepath + "\n")
+                          f.write("\n")
+                          self.SLURMexecute = 'mpirun -np ' + str(self.PBSncores) +  './P-Gadget3 param.txt 1>OUTPUT 2>ERROR\n'
+                          f.write(self.SLURMexecute +'\n')
+                          f.close()
+
+                      if self.subtype == "PBS":
+                          f.write("#!/bin/csh" + "\n")
+                          f.write("#PBS -k eo\n")
+                          f.write("#PBS -l nodes=" + str(self.PBSnnodes) + ":ppn=" + str(self.PBSncores) + "\n")
+                          f.write("#PBS -N " + jobname + "\n")
+                          f.write("#PBS -M " + self.emailaddress + "\n")
+                          f.write("#PBS -o " + filepath + "/" + jobname + ".out\n")
+                          f.write("#PBS -e " + filepath + "/" + jobname + ".err\n")
+                          #f.write("#PBS -u " + self.username + "\n")
+                          f.write("#PBS -q " + self.PBSqueue + "\n")
+                          f.write(self.PBSextraflags + "\n")
+                          f.write("\n")
+                          f.write(self.PBSextralines + "\n")
+                          f.write("\n")
+                          f.write("cd " + filepath + "\n")
+                          f.write("\n")
+                          f.write(self.PBSexecute)
+                          f.close()
+
                       if self.compilegadopt == True:
                           if self.ENABLE_SUBFIND == True:
                               self.constructconfigsh(filepath + "/Config_sub.sh")
-                              command5 = "tail -n+96 /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                              command5 = "tail -n+96 " + gadgetfilepath + "P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
                               command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config_sub.sh"
-                              command7 = "cp " + filepath + "/Config_sub.sh /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh"
+                              command7 = "cp " + filepath + "/Config_sub.sh " + gadgetfilepath + "P-Gadget3/Config.sh"
                               subprocess.call(';'.join([command5,command6,command7]), shell=True)
                           else:
                               self.constructconfigsh(filepath + "/Config.sh")
-                              command5 = "tail -n+96 /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
+                              command5 = "tail -n+96 " + gadgetfilepath + "/P-Gadget3/Config.sh > " + filepath + "/bottomConfig"
                               command6 = "cat " + filepath + "/bottomConfig >> " + filepath + "/Config.sh"
-                              command7 = "cp " + filepath + "/Config.sh /bigbang/data/bgriffen/lib/P-Gadget3/Config.sh"
+                              command7 = "cp " + filepath + "/Config.sh " + gadgetfilepath + "P-Gadget3/Config.sh"
                               subprocess.call(';'.join([command5,command6,command7]), shell=True)
                           rmconfig = "rm " + filepath + "/bottomConfig"
                           subprocess.call([rmconfig], shell=True)
@@ -331,7 +381,7 @@ class GadgetRun(HasTraits):
                           f1.write("rm P-Gadget3_Sub\n")
                           f1.write("rm ERRORsub\n")
                           f1.write("rm OUTPUTsub\n")
-                          f1.write("cp /bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
+                          f1.write("cp " + gadgetfilepath + "P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3_sub\n")
                           if self.submitjob == True:
                               f1.write("qsub runscript_sub \n")
                       else:
@@ -339,11 +389,17 @@ class GadgetRun(HasTraits):
                           f1.write("rm P-Gadget3\n")
                           f1.write("rm ERROR\n")
                           f1.write("rm OUTPUT\n")
-                          f1.write("cp /bigbang/data/bgriffen/lib/P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3\n")
+                          f1.write("cp " + gadgetfilepath + "P-Gadget3/P-Gadget3 " + filepath + "/P-Gadget3\n")
+                          
                           if self.submitjob == True:
-                              f1.write("qsub runscript \n")
+                            if self.subtype == "PBS":
+                                f1.write("qsub runscript \n")
+                            elif self.subtype == "SLURM":
+                                f1.write("sbatch runscript \n")
+    
+    if self.subtype == "PBS":
+        f1.write("logout \n")
 
-    f1.write("logout \n")
     f1.close()
 
     command = "bash rungadget.sh"
@@ -352,38 +408,52 @@ class GadgetRun(HasTraits):
     #command = "rm " + str(filepath) + "/rungadget.sh"
     #subprocess.call(';'.join([command]), shell=True)
 
-    print "SUBMITTED JOBS - BACK AT bigbang!"
+    print "SUBMITTED JOBS!"
 
   def _ENABLE_SUBFIND_changed(self):
       if self.ENABLE_SUBFIND == True:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
       else:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-       
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>"  + self.errorfile
+
   def _PBSncores_changed(self):
       if self.ENABLE_SUBFIND == True:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
       else:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
        
   def _PBSnnodes_changed(self):
       if self.ENABLE_SUBFIND == True:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
       else:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-       
-  def _PBSoutputfile_changed(self):
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
+  
+  def _SLURMcores_changed(self):
       if self.ENABLE_SUBFIND == True:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
       else:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-       
-  def _PBSoutputfile_changed(self):
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
+
+  def _errorfile_changed(self):
       if self.ENABLE_SUBFIND == True:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.PBSoutputfile + "sub 2>" + self.PBSerrorfile + "sub"
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
       else:
-        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-       
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>"  + self.errorfile
+
+  def _outfile_changed(self):
+      if self.ENABLE_SUBFIND == True:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3_sub ./param_sub.txt 3 63 1>" + self.outfile + "sub 2>" + self.errorfile + "sub"
+      else:
+        self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
+        self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>"  + self.errorfile
+
+  
+
   def _vizexpz_button_fired(self):
       figure = self.main.display
       figure.clear()
@@ -855,8 +925,8 @@ class GadgetRun(HasTraits):
       self.FOF_SECONDARY_LINK_TYPES = '4+8+16+32'
       self.ExpansionListArr = np.zeros(shape=(1,4))
       self.clusteropt = self.main.headertab.clusteropt
-      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.PBSoutputfile + " 2>" + self.PBSerrorfile
-
+      self.PBSexecute = "mpirun -np " + str(int(self.PBSncores*self.PBSnnodes)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
+      self.SLURMexecute = "mpirun -np " + str(int(self.SLURMcores)) + " ./P-Gadget3 ./param.txt 1>" + self.outfile + " 2>" + self.errorfile
 
       #self.PBSstring = \
       #"#!/bin/sh \n#PBS -l nodes=3:ppn=8 \n#PBS -N H190897LX9N1 \n#PBS -m be \n. /opt/torque/etc/openmpi-setup.sh \ncd /bigbang/data/AnnaGroup/caterpillar/halos/H190897/H190897_BE_Z127_P7_LN7_LX9_O4_NV1 \nmpirun -np 24 ./P-Gadget3 ./param.txt 1>OUTPUT 2>ERROR"

@@ -353,12 +353,12 @@ class InitialConditions(HasTraits):
       self.resimlagrdir = str(self.main.headertab.datamasterpath)
       self.resimlagrfile = str(self.toplagr) + '/H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
 
-    def _parentsimpath_changed(self):
-      if len(os.path.basename(glob(self.parentsimpath + "*.conf")[0])) == 1:
-         self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
-         self.parentconfstatus = "Proceed."
-      else:
-         self.parentconfstatus = "Cannot locate file."
+    #def _parentsimpath_changed(self):
+      #if len(os.path.basename(glob(self.parentsimpath + "*.conf")[0])) == 1:
+      #   self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
+      #   self.parentconfstatus = "Proceed."
+      #else:
+      #   self.parentconfstatus = "Cannot locate file."
 
     def _existencebutton_fired(self):
         if len(self.nrvir) == 1:
@@ -714,7 +714,7 @@ class InitialConditions(HasTraits):
         self.noutput = 4
         #self.parentsimconf = 'ics_example.conf'
         self.parentsimpath = self.main.headertab.parentsimpath + '512Parent/ics/'
-        self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
+        #self.parentsimconf = os.path.basename(glob(self.parentsimpath + "*.conf")[0])
         self.resimdir = str(self.main.headertab.datamasterpath) + str(self.toplagr) + 'H' + str(self.haloidselect) + 'NRVIR' + str(self.nrvir)
         filename = self.parentsimpath + self.parentsimconf
         self.parentseedlevel = 9
