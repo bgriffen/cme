@@ -76,7 +76,7 @@ class InitialConditions(HasTraits):
     smoother = Str
     laplaceorder = Int
     gradorder = Int
-    align = Bool(True)
+    align = Bool(False)
     writelagrfile = Bool(False)
 
     centx = Float
@@ -100,7 +100,7 @@ class InitialConditions(HasTraits):
     haloposz = Str
     halomvir = Str
     halorvir = Str
-
+    executemusic = Bool(True)
     lTF = Int(9)
     boxlevel = Int(9)
     seedinit = Int(34567)
@@ -201,7 +201,7 @@ class InitialConditions(HasTraits):
                                          Item(name='outpath',label='File Dir.',springy=True)),
                                   Group(Item(name='outfilename',label='IC File Name')),
                                   Item(name='confstatus',label='Status',style='readonly'),
-                                  Group(Item(name='generate_button',show_label=False),enabled_when='haloidselect in haloid'),label='Output')))
+                                  Group(Item(name='executemusic',label='Execute?'),Item(name='generate_button',show_label=False),enabled_when='haloidselect in haloid'),label='Output')))
 
     def _parentbox_changed(self):
         if self.parentbox == True:
@@ -274,6 +274,7 @@ class InitialConditions(HasTraits):
                                                     '_O' + str(overlapi) + \
                                                     '_NV' + str(nrviri)
                                         
+                                        #dirtest = "/n/home01/bgriffen/data/caterpillar/"
                                         filepath = self.outpath + 'halos/H' + str(self.haloidselect) + '/' + foldername
   
                                         if os.path.exists(filepath):
@@ -282,7 +283,14 @@ class InitialConditions(HasTraits):
                                         elif not os.path.exists(filepath):
                                             os.makedirs(filepath)
   
+                                            #pointfile = dirtest  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
+                                            #pointfile2 = dirtest  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
+                                            
                                             pointfile = self.outpath  + 'ics/lagr/H' + str(self.haloidselect) + 'NRVIR' + str(int(nrviri))
+                                            
+                                            #if lmaxi < 13:
+                                            #    pointfile2 = pointfile
+
                                             writepath = filepath 
                                             #self.outpath + 'halos/' + foldername
                                             confname = filepath + '/' + foldername + '.conf'
@@ -308,17 +316,17 @@ class InitialConditions(HasTraits):
                                                                    self.smoother,self.laplaceorder,self.gradorder,self.boxlevel,periodicTFstr,pointfile,boxtypei,self.noutput,self.haloidselect,nrviri)
                                             
                                             self.confstatus = 'Generated halo configuration files.'
-                                            runmusic = self.musicpath + '/MUSIC ' + confname
-                                            cding = "cd " + writepath
-                                            rmfiles = "rm wnoise* temp*"
-                                            print "EXECUTING..."
-                                            print runmusic
-                                            subprocess.call(';'.join([cding, runmusic,rmfiles]), shell=True)
-                                            #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
-                                            #runconvert = "python convertics.py"
-                                            #rmconvert = "rm reWriteIC.py convertics.py"
-                                            re.getBlocks(writepath)
-                                            #subprocess.call(';'.join([cpconvert,cding,runconvert,rmconvert]), shell=True)
+                                            if self.executemusic == True:
+                                                runmusic = self.musicpath + '/MUSIC ' + confname
+                                                cding = "cd " + writepath
+                                                rmfiles = "rm wnoise* temp*"
+                                                print "EXECUTING..."
+                                                print runmusic
+                                                subprocess.call(';'.join([cding,runmusic,rmfiles]), shell=True)
+                                                #cpconvert = "cp ./lib/reWriteIC.py ./lib/convertics.py " + writepath
+                                                #runconvert = "python convertics.py"
+                                                #rmconvert = "rm reWriteIC.py convertics.py"
+                                                re.getBlocks(writepath)
       else:
         self.confstatus = "Please select only IDs from list."
 
@@ -521,6 +529,7 @@ class InitialConditions(HasTraits):
                 idhalo = int(self.haloidselect)
                 idcand = getcandidatelist(self.candidatefiledir + self.candidatefilename)
                 idcand = idcand[:,0]
+                
                 for index in xrange(0,len(idcand)):
                     if idcand[index] == idhalo:
                         nhalo = index

@@ -76,7 +76,7 @@ class Header(HasTraits):
             self.homepath = '/n/home01/bgriffen/data/'
             self.masterpath = self.homepath + self.username
             self.gadgetpath = self.masterpath + '/lib/P-Gadget3'
-            self.musicpath = self.masterpath+ '/lib/music'
+            self.musicpath = self.masterpath + '/lib/music'
             self.datamasterpath = self.homepath + 'caterpillar/'
             self.parentsimpath = self.homepath + 'caterpillar/parent/'
 
@@ -94,7 +94,7 @@ class Header(HasTraits):
             self.homepath = '/bigbang/data/'
             self.masterpath = self.homepath + self.username
             self.gadgetpath = self.masterpath + '/lib/P-Gadget3'
-            self.musicpath = self.masterpath+ '/lib/music'
+            self.musicpath = self.masterpath + '/lib/music'
             self.datamasterpath = self.homepath + 'AnnaGroup/caterpillar/'
             self.parentsimpath = self.homepath + 'AnnaGroup/caterpillar/parent/'
 

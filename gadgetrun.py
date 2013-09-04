@@ -256,14 +256,14 @@ class GadgetRun(HasTraits):
     if self.subtype == "PBS":
         gadgetfilepath = "/bigbang/data/bgriffen/lib/"
 
-        f1.write("cd " + gadgetfilepath "P-Gadget3\n")
+        f1.write("cd " + gadgetfilepath + "P-Gadget3\n")
         f1.write("ssh antares <<'ENDSSH' \n")
         
     if self.subtype == "SLURM":
         gadgetfilepath = "/n/home01/bgriffen/data/lib/"
         f1.write("unloadmods\n")
         f1.write("loadgadget\n")
-        f1.write("cd " + gadgetfilepath "P-Gadget3\n")
+        f1.write("cd " + gadgetfilepath + "P-Gadget3\n")
         
     f1.write("make clean\n")
     f1.write("make -j 8\n")
