@@ -20,7 +20,7 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 
 *Screeshots:*
 
-Candidate Selection
+**Candidate Selection**
 ![candidate selection](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png)
 
 Inspect & Generate Lagrangian Regions
