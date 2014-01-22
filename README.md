@@ -14,7 +14,9 @@ Interactive suite to do the following tasks for the Caterpillar Project being ca
 
 Not a single line of code is required by the user. 
 
-The packaged utilizes a number of suites which come with EPD distribution (e.g. Traits, Pandas) which is required for the package to work. A number of read modules are not included for Gadget files and the Rockstar halo catalogues. Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you would like to use this software for your simulation suites.
+The packaged utilizes a number of suites which come with EPD distribution (e.g. Traits, Pandas) which is required for the package to work. A number of read modules are not included for Gadget files and the Rockstar halo catalogues. 
+
+Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you would like to use this software for your simulation suites.
 
 *Screeshots:*
 
