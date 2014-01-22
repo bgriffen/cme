@@ -18,4 +18,4 @@ Utlises a number of suites which come with EPD distribution which is a requireme
 
 Some screeshots:
 
-[candidate selection] http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png
+![candidate selection] http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png
