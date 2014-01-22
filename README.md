@@ -18,7 +18,7 @@ The packaged utilizes a number of suites which come with EPD distribution (e.g. 
 
 Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you would like to use this software for your simulation suites.
 
-Screenshots
+Examples
 ==
 **Candidate Selection**
 ![candidate selection](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png)
@@ -35,8 +35,11 @@ Examing Halo Distributions Interactively  (via in-line Mayavi)
 Examing Halo Velocity Field Interactively (via in-line Mayavi)
 ![Examing Halo Velocity Field Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/velocityhaloinspection.png)
 
-Examine Contatmination Quality
+Examine Contamination Quality
 ![Examine Contatmination Quality](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationradial.png)
+
+Examine Contamination Quality (via heatmap)
+![Examine Contatmination Heatmaps](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationheatmap.png)
 
 Specify All Gadget Parameters (temporal resolution etc.)
 ![Specify All Gadget Parameters](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/specifysnapshotoutput.png)
