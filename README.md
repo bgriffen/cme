@@ -5,7 +5,7 @@ Caterpillar Made Easy
 
 Interactive suite to do the following tasks for the Caterpillar Project being carried out at MIT/Harvard (roughly in sequential order of typical objective):
 
-* ![generate candidate list] (http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png) based on tunable isolation and merger history criteria
+* generate list of candidates based on tunable isolation and merger history criteria
 * inspect lagrangian region properties (size, volume, morphology)
 * contruct initial conditions for cosmological simulations using MUSIC (Hahn & Abel 2010).
 * run cosmological simulations using P-Gadget3.
@@ -15,3 +15,7 @@ Interactive suite to do the following tasks for the Caterpillar Project being ca
 * submit job via both PBS and SLURM submission systems.
 
 Utlises a number of suites which come with EPD distribution which is a requirement. A number of read modules are not included for Gadget files and the Rockstar halo catalogues. Please contact brendan.f.griffen@gmail.com if you would like to use this software for your simulation suites.
+
+Some screeshots:
+
+[candidate selection] http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png
