@@ -16,6 +16,31 @@ Interactive suite to do the following tasks for the Caterpillar Project being ca
 
 Utlises a number of suites which come with EPD distribution which is a requirement. A number of read modules are not included for Gadget files and the Rockstar halo catalogues. Please contact brendan.f.griffen@gmail.com if you would like to use this software for your simulation suites.
 
-Some screeshots:
+*Screeshots:*
 
+Candidate Selection
 ![candidate selection](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png)
+
+Inspect & Generate Lagrangian Regions
+![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/lagrangianinspection.png)
+
+Inspect Merger Trees
+![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/mergertreeinspection.png)
+
+Examing Halo Distributions Interactively  (via in-line Mayavi)
+![Examing Halo Distributions Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/FOFviz.png)
+
+Examing Halo Velocity Field Interactively (via in-line Mayavi)
+![Examing Halo Velocity Field Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/velocityhaloinspection.png)
+
+Examine Contatmination Quality
+![Examine Contatmination Quality](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationradial.png)
+
+Specify All Gadget Parameters (temporal resolution etc.)
+![Specify All Gadget Parameters](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/specifysnapshotoutput.png)
+
+Investigate inter-halo relations from Rockstar halo catalogue
+![Investigate inter-halo relations](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/inspectparams.png)
+
+Run full suites with varied initial conditions (e.g. to determine how resolution effects contamination rate)
+![Run full suites with varying initial conditions](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/existencecheck.png)
