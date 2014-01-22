@@ -18,7 +18,7 @@ The packaged utilizes a number of suites which come with EPD distribution (e.g. 
 
 Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you would like to use this software for your simulation suites.
 
-### Examples
+## Examples
 
 #### Candidate Selection
 ![candidate selection](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png)
@@ -29,23 +29,23 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 #### Inspect Merger Trees
 ![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/mergertreeinspection.png)
 
-#### Examing Halo Distributions Interactively  (via in-line Mayavi)
+#### Examing Halo Distributions Interactively  (via Mayavi)
 ![Examing Halo Distributions Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/FOFviz.png)
 
-#### Examing Halo Velocity Field Interactively (via in-line Mayavi)
+#### Examing Halo Velocity Field Interactively (via Mayavi)
 ![Examing Halo Velocity Field Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/velocityhaloinspection.png)
 
-Examine Contamination Quality
+#### Examine Contamination Quality
 ![Examine Contatmination Quality](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationradial.png)
 
-Examine Contamination Quality (via heatmap)
+#### Examine Contamination Quality (via heatmap)
 ![Examine Contatmination Heatmaps](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationheatmap.png)
 
-Specify All Gadget Parameters (temporal resolution etc.)
+#### Specify All Gadget Parameters (temporal resolution etc.)
 ![Specify All Gadget Parameters](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/specifysnapshotoutput.png)
 
-Investigate inter-halo relations from Rockstar halo catalogue
+#### Investigate inter-halo relations from Rockstar halo catalogue
 ![Investigate inter-halo relations](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/inspectparams.png)
 
-Run full suites with varied initial conditions (e.g. to determine how resolution effects contamination rate)
+#### Run full suites with varied initial conditions (e.g. to determine how resolution effects contamination rate)
 ![Run full suites with varying initial conditions](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/existencecheck.png)
