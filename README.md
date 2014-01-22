@@ -1,8 +1,6 @@
 CME Caterpillar Made Easy
 ===
 
-Caterpillar Made Easy
-
 Interactive suite to do the following tasks for the Caterpillar Project being carried out at MIT/Harvard (roughly in sequential order of typical objective):
 
 * generate list of candidates based on tunable isolation and merger history criteria
