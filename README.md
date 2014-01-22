@@ -18,21 +18,21 @@ The packaged utilizes a number of suites which come with EPD distribution (e.g. 
 
 Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you would like to use this software for your simulation suites.
 
-## Examples
+### Examples
 
-**Candidate Selection**
+#### Candidate Selection
 ![candidate selection](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png)
 
-Inspect & Generate Lagrangian Regions
+#### Inspect & Generate Lagrangian Regions
 ![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/lagrangianinspection.png)
 
-Inspect Merger Trees
+#### Inspect Merger Trees
 ![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/mergertreeinspection.png)
 
-Examing Halo Distributions Interactively  (via in-line Mayavi)
+#### Examing Halo Distributions Interactively  (via in-line Mayavi)
 ![Examing Halo Distributions Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/FOFviz.png)
 
-Examing Halo Velocity Field Interactively (via in-line Mayavi)
+#### Examing Halo Velocity Field Interactively (via in-line Mayavi)
 ![Examing Halo Velocity Field Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/velocityhaloinspection.png)
 
 Examine Contamination Quality
