@@ -47,5 +47,6 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 #### Investigate inter-halo relations from Rockstar halo catalogue
 ![Investigate inter-halo relations](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/inspectparams.png)
 
-#### Run full suites with varied initial conditions (e.g. to determine how resolution effects contamination rate)
+#### Run full suites with varied initial conditions 
+##### (e.g. to determine how resolution effects contamination rate)
 ![Run full suites with varying initial conditions](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/existencecheck.png)
