@@ -50,3 +50,6 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 #### Run full suites with varied initial conditions 
 ##### (e.g. to determine how resolution effects contamination rate)
 ![Run full suites with varying initial conditions](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/existencecheck.png)
+
+#### Submit jobs to cluster via PBS or SLURM
+![Submit jobs](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/submitjob.png)
