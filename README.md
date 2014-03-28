@@ -21,35 +21,35 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 ## Examples
 
 #### Candidate Selection
-![candidate selection](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/candidateselection.png)
+![candidate selection](http://brendangriffen.com/images/cme/candidateselection.png)
 
 #### Inspect & Generate Lagrangian Regions
-![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/lagrangianinspection.png)
+![inspect lagrangian region](http://brendangriffen.com/images/cme/lagrangianinspection.png)
 
 #### Inspect Merger Trees
 ![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/mergertreeinspection.png)
 
 #### Examing Halo Distributions Interactively  (via Mayavi)
-![Examing Halo Distributions Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/FOFviz.png)
+![Examing Halo Distributions Interactively](http://brendangriffen.com/images/cme/FOFviz.png)
 
 #### Examing Halo Velocity Field Interactively (via Mayavi)
-![Examing Halo Velocity Field Interactively](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/velocityhaloinspection.png)
+![Examing Halo Velocity Field Interactively](http://brendangriffen.com/images/cme/velocityhaloinspection.png)
 
 #### Examine Contamination Quality
-![Examine Contatmination Quality](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationradial.png)
+![Examine Contatmination Quality](http://brendangriffen.com/images/cme/contaminationradial.png)
 
 #### Examine Contamination Quality (via heatmap)
-![Examine Contatmination Heatmaps](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/contaminationheatmap.png)
+![Examine Contatmination Heatmaps](http://brendangriffen.com/images/cme/contaminationheatmap.png)
 
 #### Specify All Gadget Parameters (temporal resolution etc.)
-![Specify All Gadget Parameters](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/specifysnapshotoutput.png)
+![Specify All Gadget Parameters](http://brendangriffen.com/images/cme/specifysnapshotoutput.png)
 
 #### Investigate inter-halo relations from Rockstar halo catalogue
-![Investigate inter-halo relations](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/inspectparams.png)
+![Investigate inter-halo relations](http://brendangriffen.com/images/cme/mergertreeinspection.png)
 
 #### Run full suites with varied initial conditions 
 ##### (e.g. to determine how resolution effects contamination rate)
-![Run full suites with varying initial conditions](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/existencecheck.png)
+![Run full suites with varying initial conditions](http://brendangriffen.com/images/cme/existencecheck.png)
 
 #### Submit jobs to cluster via PBS or SLURM
-![Submit jobs](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/submitjob.png)
+![Submit jobs](http://brendangriffen.com/images/cme/submitjob.png)
