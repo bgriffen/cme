@@ -27,7 +27,7 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 ![inspect lagrangian region](http://brendangriffen.com/images/cme/lagrangianinspection.png)
 
 #### Inspect Merger Trees
-![inspect lagrangian region](http://bgriffen.scripts.mit.edu/www/wp-content/uploads/2014/01/mergertreeinspection.png)
+![inspect lagrangian region](http://brendangriffen.com/images/cme/mergertreeinspection.png)
 
 #### Examing Halo Distributions Interactively  (via Mayavi)
 ![Examing Halo Distributions Interactively](http://brendangriffen.com/images/cme/FOFviz.png)
@@ -45,7 +45,7 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 ![Specify All Gadget Parameters](http://brendangriffen.com/images/cme/specifysnapshotoutput.png)
 
 #### Investigate inter-halo relations from Rockstar halo catalogue
-![Investigate inter-halo relations](http://brendangriffen.com/images/cme/mergertreeinspection.png)
+![Investigate inter-halo relations](http://brendangriffen.com/images/cme/inspectparams.png)
 
 #### Run full suites with varied initial conditions 
 ##### (e.g. to determine how resolution effects contamination rate)
