@@ -21,7 +21,7 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 ## Examples
 
 #### Candidate Selection
-![candidate selection](http://brendangriffen.com/images/cme/candidateselection.png)
+![candidate selection](http://brendangriffen.com/assets/cme/candidateselection.png)
 
 #### Inspect & Generate Lagrangian Regions
 ![inspect lagrangian region](http://brendangriffen.com/images/cme/lagrangianinspection.png)
