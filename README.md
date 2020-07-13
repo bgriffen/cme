@@ -21,35 +21,35 @@ Please contact [brendan.f.griffen@gmail.com](mailto:brendan.f.griffen) if you wo
 ## Examples
 
 #### Candidate Selection
-![candidate selection](http://brendangriffen.com/assets/cme/candidateselection.png)
+![candidate selection](screenshots/FOFviz.png)
 
 #### Inspect & Generate Lagrangian Regions
-![inspect lagrangian region](http://brendangriffen.com/assets/cme/lagrangianinspection.png)
+![inspect lagrangian region](screenshots/lagrangianinspection.png)
 
 #### Inspect Merger Trees
-![inspect lagrangian region](http://brendangriffen.com/assets/cme/mergertreeinspection.png)
+![inspect lagrangian region](screenshots/mergertreeinspection.png)
 
 #### Examing Halo Distributions Interactively  (via Mayavi)
-![Examing Halo Distributions Interactively](http://brendangriffen.com/assets/cme/FOFviz.png)
+![Examing Halo Distributions Interactively](screenshots/FOFviz.png)
 
 #### Examing Halo Velocity Field Interactively (via Mayavi)
-![Examing Halo Velocity Field Interactively](http://brendangriffen.com/assets/cme/velocityhaloinspection.png)
+![Examing Halo Velocity Field Interactively](screenshots/velocityhaloinspection.png)
 
 #### Examine Contamination Quality
-![Examine Contatmination Quality](http://brendangriffen.com/assets/cme/contaminationradial.png)
+![Examine Contatmination Quality](screenshots/contaminationradial.png)
 
 #### Examine Contamination Quality (via heatmap)
-![Examine Contatmination Heatmaps](http://brendangriffen.com/assets/cme/contaminationheatmap.png)
+![Examine Contatmination Heatmaps](screenshots/contaminationheatmap.png)
 
 #### Specify All Gadget Parameters (temporal resolution etc.)
-![Specify All Gadget Parameters](http://brendangriffen.com/assets/cme/specifysnapshotoutput.png)
+![Specify All Gadget Parameters](screenshots/specifysnapshotoutput.png)
 
 #### Investigate inter-halo relations from Rockstar halo catalogue
-![Investigate inter-halo relations](http://brendangriffen.com/assets/cme/inspectparams.png)
+![Investigate inter-halo relations](screenshots/inspectparams.png)
 
 #### Run full suites with varied initial conditions 
 ##### (e.g. to determine how resolution effects contamination rate)
-![Run full suites with varying initial conditions](http://brendangriffen.com/assets/cme/existencecheck.png)
+![Run full suites with varying initial conditions](screenshots/existencecheck.png)
 
 #### Submit jobs to cluster via PBS or SLURM
-![Submit jobs](http://brendangriffen.com/assets/cme/submitjob.png)
+![Submit jobs](screenshots/submitjob.png)
